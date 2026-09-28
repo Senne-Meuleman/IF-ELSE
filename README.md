@@ -1,5 +1,10 @@
 # Tectonic Hackathon: prep kit
 
+**This checkout contains the agent instructions and skills; the runnable Blocks
+application described below is not included.** Bring in the kit before running
+the Streamlit, uv or data-generation commands. See [SKILLS.md](SKILLS.md) for the
+eleven skills shared by Claude Code, Codex (GPT models) and Cursor agents.
+
 ## What we know (researched 27 Sept 2026)
 
 | | |
@@ -63,7 +68,13 @@ uv run python -m blocks.build_index data/docs   # embed the challenge PDFs you r
 
 **Models:** `qwen3.5:4b` runs 100% on the 6 GB GPU at about 54 tok/s. It's good enough for a live demo and "on-prem" pitch, but weaker at extraction (it leaves fields null). **Use Gemini for quality and keep Ollama as the offline fallback** for bad venue Wi-Fi. `bge-m3` is used for embeddings. Thinking is disabled for Ollama in `llm.py`, because otherwise qwen3.5 spends the whole context thinking and returns nothing.
 
-## Claude Code helpers (`.claude/`, see `CLAUDE.md`)
+## Agent helpers (Claude Code, Codex and Cursor)
+
+Claude Code uses `.claude/skills/`; Codex and Cursor use the synchronized
+`.agents/skills/`. In Codex use `$skill-name`; in Claude Code and Cursor use
+`/skill-name`. See [SKILLS.md](SKILLS.md) for all workflows and synchronization.
+The Claude subagents below are optional; demo-check, privacy-check and
+pitch-rehearsal provide equivalent workflows without those subagents.
 | When | Use |
 |---|---|
 | Brief arrives | `/kickoff` (plan, pitch skeleton, task split) · `researcher` agent in the background · `judge` agent on the chosen idea |

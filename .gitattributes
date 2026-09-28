@@ -1,0 +1,5 @@
+# Keep synchronized sources and copies identical on Windows and in CI.
+.claude/skills/** text eol=lf
+.agents/skills/** text eol=lf
+*.py text eol=lf
+*.mjs text eol=lf

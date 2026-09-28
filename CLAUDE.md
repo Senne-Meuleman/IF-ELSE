@@ -1,5 +1,10 @@
 @AGENTS.md
 
+See `SKILLS.md` for the shared eleven-skill catalog and maintenance instructions.
+New workflows: `/demo-check`, `/privacy-check`, `/prompt-eval`, `/rag-grounding`
+and `/pitch-rehearsal`. `.claude/skills/` is canonical; after edits run
+`python scripts/sync_skills.py` to update the Codex/Cursor copy.
+
 ## Claude Code helpers in `.claude/`
 Skills (invoke with `/name`):
 - `/kickoff`: paste the challenge brief and get the user, pain, pitch skeleton, scope, which tabs to keep, and a team task split

@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumen — Pitch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+/* =====================================================================
+   DESIGN TOKENS — change these first when re-theming the deck
+   ===================================================================== */
+@property --hue { syntax: '<number>'; inherits: true; initial-value: 265; }
+:root {
+  --bg: #07060d;
+  --ink: #f5f3ff;
+  --muted: #a6a1c2;
+  --line: rgba(255,255,255,.10);
+  --panel: rgba(255,255,255,.05);
+  --accent: hsl(var(--hue) 95% 68%);
+  --accent-2: hsl(calc(var(--hue) + 70) 95% 65%);
+  --grad: linear-gradient(100deg, var(--accent), var(--accent-2));
+  --display: 'Space Grotesk', 'Segoe UI', system-ui, sans-serif;
+  --body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --ease: cubic-bezier(.16,1,.3,1);        /* expo-out: fast start, silky landing */
+  --ease-io: cubic-bezier(.65,0,.35,1);
+  --hue: 265;
+  transition: --hue 1.4s var(--ease);
+}
+* { box-sizing: border-box; margin: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--ink); overflow: hidden; }
+body { font-family: var(--body); -webkit-font-smoothing: antialiased; }
+
+/* =====================================================================
+   STAGE — fixed 1920×1080 canvas scaled to fit any screen/projector
+   ===================================================================== */
+.stage {
+  position: absolute; left: 50%; top: 50%; width: 1920px; height: 1080px;
+  transform: translate(-50%, -50%) scale(var(--s, 1)); transform-origin: center;
+  overflow: hidden;
+}
+
+/* Ambient background: drifting aurora blobs + grid, tinted by --hue */
+.bg { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.blob { position: absolute; width: 1100px; height: 1100px; border-radius: 50%; filter: blur(40px); opacity: .55; mix-blend-mode: screen; }
+.blob.b1 { background: radial-gradient(circle, hsl(var(--hue) 90% 55% / .7), transparent 62%); left: -250px; top: -350px; animation: drift1 22s ease-in-out infinite alternate; }
+.blob.b2 { background: radial-gradient(circle, hsl(calc(var(--hue) + 70) 90% 55% / .55), transparent 62%); right: -300px; bottom: -400px; animation: drift2 26s ease-in-out infinite alternate; }
+.blob.b3 { background: radial-gradient(circle, hsl(calc(var(--hue) - 50) 90% 60% / .35), transparent 60%); left: 40%; top: 30%; width: 800px; height: 800px; animation: drift3 30s ease-in-out infinite alternate; }
+@keyframes drift1 { to { transform: translate(380px, 260px) scale(1.15); } }
+@keyframes drift2 { to { transform: translate(-420px, -200px) scale(1.2); } }
+@keyframes drift3 { to { transform: translate(-500px, 180px) scale(.8); } }
+.grid-lines {
+  position: absolute; inset: -2px;
+  background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 96px 96px;
+  mask-image: radial-gradient(ellipse at center, #000 20%, transparent 75%);
+  opacity: .5;
+}
+.grain { position: absolute; inset: 0; opacity: .07; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+/* =====================================================================
+   SLIDES + SLIDE TRANSITIONS  (data-transition="zoom|slide|rise|flip|fade")
+   ===================================================================== */
+.slide {
+  position: absolute; inset: 0; padding: 120px 160px;
+  display: flex; flex-direction: column; justify-content: center;
+  opacity: 0; visibility: hidden; pointer-events: none;
+  transform: var(--future); filter: blur(8px);
+  transition: opacity .9s var(--ease), transform 1.1s var(--ease), filter .9s var(--ease), visibility 0s linear 1.1s;
+  --past: scale(.92); --future: scale(1.08);
+}
+.slide.past { transform: var(--past); }
+.slide.active { opacity: 1; visibility: visible; pointer-events: auto; transform: none; filter: none; transition-delay: 0s; }
+.slide[data-transition="slide"] { --past: translateX(-25%); --future: translateX(25%); }
+.slide[data-transition="rise"]  { --past: translateY(-18%); --future: translateY(18%); }
+.slide[data-transition="flip"]  { --past: perspective(2400px) rotateY(55deg); --future: perspective(2400px) rotateY(-55deg); }
+.slide[data-transition="fade"]  { --past: none; --future: none; filter: none; }
+.slide.center { align-items: center; text-align: center; }
+
+/* =====================================================================
+   ELEMENT ENTRANCES
+   data-anim="up|down|left|right|zoom|pop|blur|flip|fade"   data-delay="ms"
+   data-stagger="ms" on a parent staggers its direct children
+   data-step="1..n" reveals on next key press (build steps)
+   ===================================================================== */
+[data-anim], [data-step] {
+  transition: opacity .9s var(--ease), transform 1s var(--ease), filter .9s var(--ease);
+  --from: translateY(50px);
+}
+[data-anim="up"]    { --from: translateY(70px); }
+[data-anim="down"]  { --from: translateY(-70px); }
+[data-anim="left"]  { --from: translateX(-110px); }
+[data-anim="right"] { --from: translateX(110px); }
+[data-anim="zoom"]  { --from: scale(.6); }
+[data-anim="pop"]   { --from: scale(.3) rotate(-10deg); transition-timing-function: cubic-bezier(.34,1.56,.64,1); }
+[data-anim="flip"]  { --from: perspective(900px) rotateX(75deg); transform-origin: 50% 100%; }
+[data-anim="fade"]  { --from: none; }
+[data-anim="blur"]  { --from: scale(1.15); --blur: blur(24px); }
+.slide:not(.active) [data-anim], .slide:not(.active) [data-step], [data-step]:not(.shown) {
+  opacity: 0; transform: var(--from); filter: var(--blur, none); transition-delay: 0ms;
+}
+.slide.active [data-anim] { transition-delay: calc(var(--d, 0ms) + 250ms); }
+.slide.active [data-step].shown { transition-delay: var(--d, 0ms); }
+
+/* data-split: per-letter cascade for hero headlines */
+[data-split] .word { display: inline-block; white-space: nowrap; }
+[data-split] .char { display: inline-block; }
+.slide:not(.active) [data-split] .char { opacity: 0; }
+.slide.active [data-split] .char { animation: charIn 1s var(--ease) both; animation-delay: calc(var(--i) * 32ms + var(--d, 0ms) + 250ms); }
+@keyframes charIn { from { opacity: 0; transform: translateY(.6em) rotateX(-80deg) scale(.9); filter: blur(10px); } }
+
+/* SVG line drawing: <svg class="draw"> paths with pathLength="1" */
+.draw path, .draw line, .draw circle { stroke-dasharray: 1; stroke-dashoffset: 1; transition: stroke-dashoffset 1.8s var(--ease-io) calc(var(--d, 0ms) + 400ms); }
+.slide.active .draw path, .slide.active .draw line, .slide.active .draw circle { stroke-dashoffset: 0; }
+
+/* =====================================================================
+   TYPOGRAPHY + COMPONENTS
+   ===================================================================== */
+h1, h2, h3, .mega { font-family: var(--display); letter-spacing: -.035em; line-height: .95; font-weight: 700; }
+.mega { font-size: 230px; }
+h1 { font-size: 150px; }
+h2 { font-size: 104px; }
+h3 { font-size: 44px; letter-spacing: -.02em; line-height: 1.1; }
+.lead { font-size: 42px; line-height: 1.35; color: var(--muted); max-width: 1300px; margin-top: 40px; }
+.kicker { font: 600 26px/1 var(--body); letter-spacing: .28em; text-transform: uppercase; color: var(--accent); margin-bottom: 40px; }
+.grad { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.shine { background: linear-gradient(100deg, var(--accent) 20%, #fff 40%, var(--accent-2) 60%); background-size: 250% 100%; -webkit-background-clip: text; background-clip: text; color: transparent; animation: shine 5s linear infinite; }
+@keyframes shine { to { background-position: -250% 0; } }
+.chip { display: inline-flex; align-items: center; gap: 14px; padding: 16px 30px; border: 1px solid var(--line); border-radius: 999px; background: var(--panel); backdrop-filter: blur(10px); font-size: 26px; color: var(--muted); }
+.chip .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 20px var(--accent); animation: pulse 1.6s ease-in-out infinite; }
+@keyframes pulse { 50% { transform: scale(.6); opacity: .5; } }
+.row { display: flex; gap: 48px; margin-top: 80px; }
+.card {
+  flex: 1; padding: 56px 52px; border-radius: 36px; background: linear-gradient(160deg, rgba(255,255,255,.08), rgba(255,255,255,.02));
+  border: 1px solid var(--line); backdrop-filter: blur(14px); position: relative; overflow: hidden;
+}
+.card .icon { font-size: 72px; margin-bottom: 36px; display: block; }
+.card p { font-size: 30px; color: var(--muted); line-height: 1.4; margin-top: 18px; }
+.card::after { content: ''; position: absolute; inset: 0; background: radial-gradient(600px circle at var(--mx, 50%) var(--my, 0%), hsl(var(--hue) 90% 70% / .16), transparent 45%); pointer-events: none; }
+.stat { flex: 1; }
+.stat .num { font: 700 150px/1 var(--display); letter-spacing: -.04em; }
+.stat .label { font-size: 30px; color: var(--muted); margin-top: 20px; }
+.float { animation: float 6s ease-in-out infinite; }
+@keyframes float { 50% { transform: translateY(-22px); } }
+.hint { position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%); font-size: 22px; color: var(--muted); opacity: .6; letter-spacing: .1em; }
+.hint kbd, .demo-side kbd { font: 600 20px var(--body); padding: 4px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); }
+.notes { display: none; }  /* presenter notes — shown in the N window only */
+
+/* Chrome: progress bar + counter */
+.progress { position: fixed; left: 0; bottom: 0; height: 4px; width: calc(var(--p, 0) * 100%); background: var(--grad); box-shadow: 0 0 18px var(--accent); transition: width .8s var(--ease); z-index: 10; }
+.counter { position: fixed; right: 26px; bottom: 18px; font: 500 14px var(--body); color: var(--muted); opacity: .6; z-index: 10; font-variant-numeric: tabular-nums; }
+
+/* =====================================================================
+   DEMO: mock webshop inside a browser frame
+   ===================================================================== */
+.demo-layout { display: grid; grid-template-columns: 520px 1fr; gap: 80px; align-items: center; height: 100%; }
+.demo-side h2 { font-size: 88px; }
+.steps-list { list-style: none; padding: 0; margin: 56px 0; display: grid; gap: 22px; counter-reset: s; }
+.steps-list li { counter-increment: s; font-size: 30px; color: var(--muted); display: flex; align-items: center; gap: 20px; transition: color .4s, transform .5s var(--ease); }
+.steps-list li::before { content: counter(s); width: 50px; height: 50px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--line); font-size: 22px; transition: all .4s; }
+.steps-list li.on { color: var(--ink); transform: translateX(14px); }
+.steps-list li.on::before { background: var(--grad); border-color: transparent; color: #000; box-shadow: 0 0 30px var(--accent); }
+.steps-list li.done::before { content: '✓'; background: var(--panel); color: var(--accent); }
+.demo-btns { display: flex; gap: 18px; }
+.btn { font: 600 26px var(--body); padding: 20px 34px; border-radius: 18px; border: 1px solid var(--line); background: var(--panel); color: var(--ink); cursor: pointer; transition: transform .2s, background .2s; }
+.btn:hover { transform: translateY(-2px); background: rgba(255,255,255,.1); }
+.btn.primary { background: var(--grad); color: #0b0716; border: 0; }
+
+.browser { position: relative; height: 820px; border-radius: 28px; overflow: hidden; background: #fbfaf8; color: #16131f; box-shadow: 0 60px 140px -30px hsl(var(--hue) 80% 40% / .55), 0 0 0 1px rgba(255,255,255,.15); }
+.browser-bar { height: 58px; display: flex; align-items: center; gap: 10px; padding: 0 22px; background: #eceaf0; border-bottom: 1px solid #dcd9e2; }
+.browser-bar i { width: 15px; height: 15px; border-radius: 50%; background: #ff5f57; } .browser-bar i:nth-child(2) { background: #febc2e; } .browser-bar i:nth-child(3) { background: #28c840; }
+.browser-bar .url { margin-left: 24px; flex: 1; max-width: 560px; height: 34px; border-radius: 10px; background: #fff; font: 500 17px var(--body); color: #6d6878; display: flex; align-items: center; padding: 0 16px; }
+.shop-vp { position: absolute; inset: 58px 0 0 0; overflow: hidden; font-family: var(--body); }
+.shop-h { display: flex; align-items: center; gap: 24px; padding: 22px 34px; border-bottom: 1px solid #eee; }
+.logo { font: 700 30px var(--display); letter-spacing: -.03em; }
+.search { flex: 1; display: flex; align-items: center; gap: 10px; background: #f1eff4; border-radius: 14px; padding: 0 16px; height: 50px; font-size: 20px; color: #8a8594; }
+.search input { flex: 1; border: 0; background: none; outline: none; font: 500 20px var(--body); color: #16131f; }
+.search button { border: 0; background: none; font-size: 26px; color: #8a8594; cursor: pointer; }
+.cart-btn { position: relative; border: 0; background: #16131f; color: #fff; width: 56px; height: 50px; border-radius: 14px; font-size: 24px; cursor: pointer; }
+.badge { position: absolute; top: -9px; right: -9px; min-width: 26px; height: 26px; border-radius: 13px; background: hsl(var(--hue) 90% 58%); color: #fff; font: 700 15px/26px var(--body); padding: 0 6px; }
+.badge.bump { animation: bump .5s cubic-bezier(.34,1.56,.64,1); }
+@keyframes bump { 40% { transform: scale(1.6); } }
+.shop-main { padding: 26px 34px; height: calc(100% - 95px); overflow: hidden; }
+.banner { border-radius: 22px; padding: 28px 36px; color: #fff; background: linear-gradient(110deg, hsl(var(--hue) 70% 30%), hsl(calc(var(--hue) + 70) 80% 55%)); display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.banner b { font: 700 34px var(--display); } .banner span { opacity: .85; font-size: 19px; }
+.pgrid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+.pcard { background: #fff; border: 1px solid #eee; border-radius: 20px; overflow: hidden; transition: transform .3s var(--ease), box-shadow .3s; animation: cardIn .6s var(--ease) both; animation-delay: calc(var(--i) * 60ms); }
+.pcard:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -20px rgba(0,0,0,.3); }
+@keyframes cardIn { from { opacity: 0; transform: translateY(20px) scale(.97); } }
+.pimg { height: 150px; display: grid; place-items: center; font-size: 76px; background: linear-gradient(135deg, var(--a), var(--b)); }
+.pinfo { padding: 14px 18px 18px; display: flex; justify-content: space-between; align-items: center; }
+.pinfo h4 { font-size: 19px; } .pinfo p { color: #6d6878; font-size: 17px; margin-top: 4px; }
+.add { border: 0; background: #16131f; color: #fff; font: 600 16px var(--body); padding: 10px 18px; border-radius: 12px; cursor: pointer; transition: transform .15s; }
+.add:active { transform: scale(.94); }
+.empty { color: #8a8594; font-size: 20px; padding: 40px 0; }
+.drawer { position: absolute; top: 0; right: 0; bottom: 0; width: 440px; background: #fff; box-shadow: -30px 0 80px rgba(0,0,0,.18); transform: translateX(105%); transition: transform .6s var(--ease); padding: 30px; display: flex; flex-direction: column; z-index: 3; }
+.drawer.open { transform: none; }
+.drawer h3 { font-size: 30px; margin-bottom: 20px; display: flex; justify-content: space-between; }
+.drawer h3 button { border: 0; background: none; font-size: 30px; cursor: pointer; }
+.line-item { display: flex; align-items: center; gap: 16px; padding: 14px 0; border-bottom: 1px solid #f0eef3; font-size: 18px; animation: cardIn .5s var(--ease) both; }
+.line-item .th { width: 58px; height: 58px; border-radius: 14px; display: grid; place-items: center; font-size: 30px; background: linear-gradient(135deg, var(--a), var(--b)); }
+.line-item .grow { flex: 1; } .line-item small { color: #8a8594; }
+.total { margin-top: auto; display: flex; justify-content: space-between; font: 700 26px var(--display); padding: 20px 0; }
+.cta { border: 0; width: 100%; height: 62px; border-radius: 16px; background: linear-gradient(100deg, hsl(var(--hue) 85% 55%), hsl(calc(var(--hue) + 70) 85% 52%)); color: #fff; font: 700 21px var(--body); cursor: pointer; position: relative; overflow: hidden; }
+.cta.loading { color: transparent; pointer-events: none; }
+.cta.loading::after { content: ''; position: absolute; inset: 0; margin: auto; width: 28px; height: 28px; border: 3px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.checkout { display: grid; grid-template-columns: 1.2fr 1fr; gap: 34px; animation: cardIn .6s var(--ease) both; }
+.checkout h3 { font-size: 30px; margin-bottom: 18px; }
+.field { display: block; margin-bottom: 14px; font-size: 15px; color: #8a8594; }
+.field div { margin-top: 6px; padding: 14px 16px; border: 1px solid #e4e1ea; border-radius: 12px; color: #16131f; font-size: 19px; }
+.summary { background: #f6f4f9; border-radius: 22px; padding: 26px; display: flex; flex-direction: column; }
+.done { height: 100%; display: grid; place-content: center; text-align: center; gap: 18px; }
+.done .tick { width: 130px; height: 130px; margin: 0 auto; border-radius: 50%; background: linear-gradient(135deg, hsl(var(--hue) 85% 55%), hsl(calc(var(--hue) + 70) 85% 52%)); display: grid; place-items: center; animation: pop .8s cubic-bezier(.34,1.56,.64,1) both; }
+.done .tick svg path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: drawTick .6s .4s var(--ease) forwards; }
+@keyframes pop { from { transform: scale(0) rotate(-45deg); } }
+@keyframes drawTick { to { stroke-dashoffset: 0; } }
+.done h3 { font-size: 46px; } .done p { color: #6d6878; font-size: 21px; }
+.ghost { position: absolute; z-index: 20; border-radius: 20px; pointer-events: none; }
+.confetti { position: absolute; width: 12px; height: 18px; top: 30%; left: 50%; z-index: 30; pointer-events: none; }
+.fake-cursor { position: absolute; left: 0; top: 0; width: 40px; height: 40px; z-index: 40; pointer-events: none; opacity: 0; transition: opacity .3s; filter: drop-shadow(0 6px 10px rgba(0,0,0,.35)); }
+.fake-cursor.show { opacity: 1; }
+.fake-cursor svg { transition: transform .12s; transform-origin: 6px 4px; }
+.fake-cursor.press svg { transform: scale(.8); }
+.ripple { position: absolute; width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%; border: 3px solid hsl(var(--hue) 90% 60%); z-index: 39; pointer-events: none; animation: ripple .6s var(--ease) forwards; }
+@keyframes ripple { from { transform: scale(.2); opacity: 1; } to { transform: scale(1.6); opacity: 0; } }
+
+/* Static mode (?static): final state, no motion — for screenshots / PDF export */
+.static *, .static *::before, .static *::after { transition: none !important; animation: none !important; }
+.static .shine { background: var(--grad); -webkit-background-clip: text; background-clip: text; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .2s !important; }
+  .slide { filter: none; --past: none; --future: none; }
+}
+@media print {
+  html, body { overflow: visible; height: auto; }
+  .stage { position: relative; left: 0; top: 0; transform: none; }
+  .progress, .counter, .bg { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="stage" id="stage">
+  <div class="bg"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div><div class="grid-lines"></div><div class="grain"></div></div>
+
+  <!-- ============================ 1. TITLE ============================ -->
+  <section class="slide center" data-hue="265" data-title="Title">
+    <div class="chip" data-anim="down"><span class="dot"></span>Hackathon 2026 · Team Lumen</div>
+    <h1 class="mega" data-split style="margin-top:60px">Lumen</h1>
+    <p class="lead" data-anim="up" data-delay="700">Shopping that feels like <span class="shine">magic</span>.</p>
+    <div class="hint" data-anim="fade" data-delay="1600">press <kbd>→</kbd> to begin</div>
+    <aside class="notes">Pause after the name lands. One breath. Then: "Let me ask you something."</aside>
+  </section>
+
+  <!-- ============================ 2. HOOK ============================ -->
+  <section class="slide center" data-hue="340" data-transition="rise" data-title="Hook">
+    <p class="kicker" data-anim="fade">Every online store has the same problem</p>
+    <div class="mega grad" data-anim="zoom" data-delay="150"><span data-count="70" data-suffix="%">0</span></div>
+    <p class="lead" data-anim="up" data-delay="500">of shopping carts are abandoned before checkout.</p>
+    <aside class="notes">Let the number count up in silence. Source: Baymard Institute average (verify before pitching).</aside>
+  </section>
+
+  <!-- ============================ 3. PROBLEM ============================ -->
+  <section class="slide" data-hue="10" data-title="Problem">
+    <p class="kicker" data-anim="left">The problem</p>
+    <h2 data-anim="up" data-delay="100">Checkout is where<br>shoppers go to <span class="grad">give up</span>.</h2>
+    <div class="row" data-stagger="120">
+      <div class="card" data-anim="flip" data-tilt><span class="icon">🐢</span><h3>Slow</h3><p>Seven steps and three forms between “want” and “bought”.</p></div>
+      <div class="card" data-anim="flip" data-tilt><span class="icon">🤯</span><h3>Confusing</h3><p>Hidden costs appear at the very last moment.</p></div>
+      <div class="card" data-anim="flip" data-tilt><span class="icon">📱</span><h3>Not mobile</h3><p>Built for desktops, used on phones.</p></div>
+    </div>
+    <aside class="notes">Tap each card mentally: slow, confusing, not mobile. Don't read the small text.</aside>
+  </section>
+
+  <!-- ============================ 4. SOLUTION ============================ -->
+  <section class="slide center" data-hue="265" data-transition="flip" data-title="Solution">
+    <p class="kicker" data-anim="fade">Introducing</p>
+    <h1 data-split>From browse to bought</h1>
+    <h1 class="grad" data-anim="blur" data-delay="900">in three taps.</h1>
+    <p class="lead" data-step="1" style="margin-inline:auto">Lumen is a webshop where search, cart and checkout are one fluid motion.</p>
+    <aside class="notes">Press → once to reveal the one-liner. Then straight into the demo.</aside>
+  </section>
+
+  <!-- ============================ 5. DEMO ============================ -->
+  <section class="slide" data-demo data-hue="200" data-transition="slide" data-title="Live demo" style="padding:100px 120px">
+    <div class="demo-layout">
+      <div class="demo-side" data-anim="left">
+        <p class="kicker">Live demo</p>
+        <h2>See it<br><span class="grad">in action.</span></h2>
+        <ol class="steps-list" id="demoSteps">
+          <li>Find it instantly</li><li>Add to cart</li><li>Review the bag</li><li>One-tap checkout</li><li>Done</li>
+        </ol>
+        <div class="demo-btns">
+          <button class="btn primary" data-autopilot>▶ Autopilot <kbd>A</kbd></button>
+          <button class="btn" data-reset>Reset <kbd>R</kbd></button>
+        </div>
+      </div>
+      <div class="browser" id="shop" data-anim="right" data-delay="150">
+        <div class="browser-bar"><i></i><i></i><i></i><div class="url">🔒 lumen.shop</div></div>
+        <div class="shop-vp"></div>
+        <div class="fake-cursor"><svg width="40" height="40" viewBox="0 0 24 24"><path d="M5 3l14 8-6 1.5L10 19z" fill="#fff" stroke="#111" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+      </div>
+    </div>
+    <aside class="notes">Press A for the autopilot tour (safe) or click through it live. R resets. Narrate the benefit, not the clicks.</aside>
+  </section>
+
+  <!-- ============================ 6. HOW IT WORKS ============================ -->
+  <section class="slide" data-hue="160" data-title="How it works">
+    <p class="kicker" data-anim="left">How it works</p>
+    <h2 data-anim="up" data-delay="100">Built for speed.</h2>
+    <div style="position:relative; margin-top:90px">
+      <svg class="draw" width="1600" height="20" style="position:absolute; top:48px; left:0" viewBox="0 0 1600 20"><line x1="100" y1="10" x2="1500" y2="10" pathLength="1" stroke="url(#lg)" stroke-width="4"/><defs><linearGradient id="lg" gradientUnits="userSpaceOnUse" x1="100" y1="0" x2="1500" y2="0"><stop offset="0" stop-color="hsl(160 90% 60%)"/><stop offset="1" stop-color="hsl(230 90% 65%)"/></linearGradient></defs></svg>
+      <div class="row" data-stagger="350" style="margin-top:0">
+        <div class="stat" data-anim="pop" style="text-align:center"><div class="card" style="width:110px;height:110px;padding:0;margin:0 auto 30px;display:grid;place-items:center;border-radius:50%;font-size:48px">⚡</div><h3>Instant search</h3><p class="label" style="font-size:28px;color:var(--muted)">Results as you type</p></div>
+        <div class="stat" data-anim="pop" style="text-align:center"><div class="card" style="width:110px;height:110px;padding:0;margin:0 auto 30px;display:grid;place-items:center;border-radius:50%;font-size:48px">🛒</div><h3>Smart cart</h3><p class="label" style="font-size:28px;color:var(--muted)">Always one tap away</p></div>
+        <div class="stat" data-anim="pop" style="text-align:center"><div class="card" style="width:110px;height:110px;padding:0;margin:0 auto 30px;display:grid;place-items:center;border-radius:50%;font-size:48px">💳</div><h3>One-tap pay</h3><p class="label" style="font-size:28px;color:var(--muted)">Saved, secure, done</p></div>
+      </div>
+    </div>
+    <aside class="notes">Line draws left to right — follow it with your hand.</aside>
+  </section>
+
+  <!-- ============================ 7. NUMBERS ============================ -->
+  <section class="slide" data-hue="45" data-transition="rise" data-title="Impact">
+    <p class="kicker" data-anim="left">The impact</p>
+    <h2 data-anim="up" data-delay="100">Numbers that <span class="grad">matter</span>.</h2>
+    <div class="row" data-stagger="150" style="margin-top:110px">
+      <div class="stat" data-anim="up"><div class="num grad"><span data-count="3">0</span>×</div><div class="label">faster checkout</div></div>
+      <div class="stat" data-anim="up"><div class="num grad"><span data-count="42" data-suffix="%">0</span></div><div class="label">fewer abandoned carts</div></div>
+      <div class="stat" data-anim="up"><div class="num grad"><span data-count="1.8" data-decimals="1" data-suffix="s">0</span></div><div class="label">average time to pay</div></div>
+    </div>
+    <aside class="notes">PLACEHOLDER NUMBERS — replace with real measurements or clearly framed targets.</aside>
+  </section>
+
+  <!-- ============================ 8. CLOSE ============================ -->
+  <section class="slide center" data-hue="265" data-transition="zoom" data-title="Close">
+    <h1 class="mega" data-split>Thank you.</h1>
+    <p class="lead" data-anim="up" data-delay="800" style="margin-inline:auto">Lumen — shopping that feels like <span class="shine">magic</span>.</p>
+    <div class="chip" data-anim="pop" data-delay="1200" style="margin-top:60px"><span class="dot"></span>lumen.shop · team@lumen.shop</div>
+    <aside class="notes">Stop talking. Smile. Wait for questions.</aside>
+  </section>
+</div>
+<div class="progress" id="progress"></div>
+<div class="counter" id="counter"></div>
+
+<script>
+/* =====================================================================
+   DECK ENGINE — no dependencies. Keys:
+   → / Space / PageDown next   ← / PageUp prev   Home/End   F fullscreen
+   N presenter notes window    number + Enter jump   A/R autopilot/reset on demo
+   ===================================================================== */
+const STATIC = new URLSearchParams(location.search).has('static');
+if (STATIC) document.documentElement.classList.add('static');
+const stage = document.getElementById('stage');
+const slides = [...document.querySelectorAll('.slide')];
+let cur = 0, step = 0;
+
+function fit() {
+  const s = Math.min(innerWidth / 1920, innerHeight / 1080);
+  stage.style.setProperty('--s', s); window.__deckScale = s;
+}
+addEventListener('resize', fit); fit();
+
+// data-delay / data-stagger → CSS var --d
+document.querySelectorAll('[data-delay]').forEach(el => el.style.setProperty('--d', el.dataset.delay + 'ms'));
+document.querySelectorAll('[data-stagger]').forEach(p => [...p.children].forEach((c, i) => {
+  const base = parseInt(c.dataset.delay || p.dataset.delay || 0);
+  c.style.setProperty('--d', base + i * parseInt(p.dataset.stagger) + 'ms');
+}));
+// data-split → words/chars with --i
+document.querySelectorAll('[data-split]').forEach(el => {
+  if (el.dataset.delay) el.style.setProperty('--d', el.dataset.delay + 'ms');
+  let i = 0;
+  el.innerHTML = el.textContent.trim().split(/\s+/).map(w =>
+    `<span class="word">${[...w].map(ch => `<span class="char" style="--i:${i++}">${ch}</span>`).join('')}</span>`
+  ).join(' ');
+});
+
+const maxStep = s => Math.max(0, ...[...s.querySelectorAll('[data-step]')].map(e => +e.dataset.step));
+function applySteps() {
+  slides[cur].querySelectorAll('[data-step]').forEach(e => e.classList.toggle('shown', +e.dataset.step <= step));
+}
+
+// Animated counters: data-count, data-prefix, data-suffix, data-decimals
+function runCounters(slide) {
+  slide.querySelectorAll('[data-count]').forEach(el => {
+    const end = parseFloat(el.dataset.count), dec = +(el.dataset.decimals || 0);
+    const fmt = v => (el.dataset.prefix || '') + v.toLocaleString('en-US', { minimumFractionDigits: dec, maximumFractionDigits: dec }) + (el.dataset.suffix || '');
+    if (STATIC) { el.textContent = fmt(end); return; }
+    const t0 = performance.now() + 400, dur = 1800;
+    const tick = now => {
+      const t = Math.min(1, Math.max(0, (now - t0) / dur)), e = 1 - Math.pow(2, -10 * t);
+      el.textContent = fmt(t >= 1 ? end : end * e);
+      if (t < 1 && slides[cur] === slide) requestAnimationFrame(tick);
+    };
+    el.textContent = fmt(0); requestAnimationFrame(tick);
+  });
+}
+
+function go(n, { toStep = 0 } = {}) {
+  n = Math.max(0, Math.min(slides.length - 1, n));
+  const changed = n !== cur;
+  cur = n;
+  slides.forEach((s, i) => { s.classList.toggle('active', i === cur); s.classList.toggle('past', i < cur); });
+  step = toStep === 'max' ? maxStep(slides[cur]) : toStep;
+  if (STATIC) step = maxStep(slides[cur]);
+  applySteps();
+  const hue = slides[cur].dataset.hue; if (hue) document.documentElement.style.setProperty('--hue', hue);
+  if (changed || !go.ran) runCounters(slides[cur]);
+  go.ran = true;
+  document.dispatchEvent(new CustomEvent('slidechange', { detail: { index: cur, slide: slides[cur] } }));
+  history.replaceState(null, '', location.pathname + location.search + '#' + (cur + 1));
+  updateChrome(); updateNotes();
+}
+function next() { if (step < maxStep(slides[cur])) { step++; applySteps(); updateChrome(); } else go(cur + 1); }
+function prev() { if (step > 0) { step--; applySteps(); updateChrome(); } else if (cur > 0) go(cur - 1, { toStep: 'max' }); }
+function updateChrome() {
+  const m = maxStep(slides[cur]);
+  document.getElementById('progress').style.setProperty('--p', (cur + (m ? step / (m + 1) : 0)) / Math.max(1, slides.length - 1));
+  document.getElementById('counter').textContent = `${cur + 1} / ${slides.length}`;
+}
+
+let jump = '';
+function onKey(e) {
+  if (e.target.matches?.('input, textarea')) { if (e.key === 'Escape') e.target.blur(); return; }
+  const k = e.key;
+  if (['ArrowRight', 'ArrowDown', ' ', 'PageDown'].includes(k)) { e.preventDefault(); next(); }
+  else if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(k)) { e.preventDefault(); prev(); }
+  else if (k === 'Home') go(0); else if (k === 'End') go(slides.length - 1);
+  else if (k === 'f' || k === 'F') document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen();
+  else if (k === 'n' || k === 'N') openNotes();
+  else if (/^\d$/.test(k)) jump += k;
+  else if (k === 'Enter' && jump) { go(parseInt(jump) - 1); jump = ''; }
+  else document.dispatchEvent(new CustomEvent('deckkey', { detail: k }));
+}
+addEventListener('keydown', onKey);
+let tx = null;
+addEventListener('touchstart', e => tx = e.touches[0].clientX, { passive: true });
+addEventListener('touchend', e => { if (tx === null) return; const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 50) dx < 0 ? next() : prev(); tx = null; });
+
+// 3D tilt + spotlight for [data-tilt]
+let tilted = null;
+addEventListener('pointermove', e => {
+  const el = e.target.closest?.('[data-tilt]');
+  if (tilted && tilted !== el) { tilted.style.transform = ''; tilted = null; }
+  if (!el || STATIC) return;
+  const r = el.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+  el.style.transition = 'transform .2s ease-out';
+  el.style.transform = `perspective(1000px) rotateY(${(x - .5) * 14}deg) rotateX(${(.5 - y) * 14}deg) translateZ(10px)`;
+  el.style.setProperty('--mx', x * 100 + '%'); el.style.setProperty('--my', y * 100 + '%');
+  tilted = el;
+});
+
+// Presenter notes window (N) — also forwards keys back to the deck
+let nw = null, t0 = null;
+function openNotes() {
+  nw = window.open('', 'deck-notes', 'width=760,height=560');
+  if (!nw) return;
+  t0 = t0 || Date.now();
+  nw.document.write(`<!doctype html><title>Presenter notes</title><style>body{margin:0;padding:32px;background:#111;color:#eee;font:20px/1.5 system-ui}#t{font:700 44px system-ui;color:#9f8cff}#h{font-size:30px;margin:12px 0}#n{font-size:24px;white-space:pre-wrap}#nx{color:#888;margin-top:28px}</style><div id=t></div><div id=h></div><div id=n></div><div id=nx></div>`);
+  nw.document.close();
+  nw.document.addEventListener('keydown', onKey);
+  updateNotes();
+}
+const titleOf = s => s ? (s.dataset.title || s.querySelector('h1,h2')?.textContent || '') : '— end —';
+function updateNotes() {
+  if (!nw || nw.closed) return;
+  const d = nw.document;
+  d.getElementById('h').textContent = `${cur + 1}/${slides.length} · ${titleOf(slides[cur])}` + (maxStep(slides[cur]) ? `  (step ${step}/${maxStep(slides[cur])})` : '');
+  d.getElementById('n').textContent = slides[cur].querySelector('.notes')?.textContent.trim() || '';
+  d.getElementById('nx').textContent = 'Next: ' + titleOf(slides[cur + 1]);
+}
+setInterval(() => {
+  if (!nw || nw.closed || !t0) return;
+  const s = Math.floor((Date.now() - t0) / 1000);
+  nw.document.getElementById('t').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+}, 500);
+
+/* =====================================================================
+   DEMO — mock webshop. Edit PRODUCTS and the tour() script to fit the app.
+   ===================================================================== */
+const PRODUCTS = [
+  { id: 'p1', name: 'Aurora Sneakers', price: 129, emoji: '👟', a: '#ffd1dc', b: '#ffe9c7' },
+  { id: 'p2', name: 'Cloud Jacket',    price: 179, emoji: '🧥', a: '#c9e4ff', b: '#e3dcff' },
+  { id: 'p3', name: 'Nomad Backpack',  price: 99,  emoji: '🎒', a: '#d4f5e1', b: '#fff3c4' },
+  { id: 'p4', name: 'Pulse Headphones',price: 149, emoji: '🎧', a: '#e6ddff', b: '#ffd9f0' },
+  { id: 'p5', name: 'Orbit Watch',     price: 219, emoji: '⌚', a: '#ffe3c9', b: '#ffd0d0' },
+  { id: 'p6', name: 'Drift Sunglasses',price: 59,  emoji: '🕶️', a: '#d0f0ff', b: '#d8ffe9' },
+];
+const Shop = (() => {
+  const root = document.getElementById('shop');
+  if (!root) return null;
+  const vp = root.querySelector('.shop-vp'), cursor = root.querySelector('.fake-cursor');
+  const money = v => new Intl.NumberFormat('en-IE', { style: 'currency', currency: 'EUR' }).format(v);
+  const S = () => window.__deckScale || 1;
+  const $ = sel => vp.querySelector(sel);
+  let cart = [], q = '', run = 0, touring = false, pos = { x: 700, y: 500 };
+
+  function shell() {
+    vp.innerHTML = `
+      <header class="shop-h">
+        <div class="logo">◐ Lumen</div>
+        <label class="search">⌕<input data-search placeholder="Search products"><button data-clear aria-label="Clear">×</button></label>
+        <button class="cart-btn" data-open-cart><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8h14l-1.2 12H6.2z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="badge" data-badge>0</span></button>
+      </header>
+      <main class="shop-main" data-main></main>
+      <aside class="drawer" data-drawer></aside>`;
+    $('[data-search]').addEventListener('input', e => { q = e.target.value; renderGrid(); });
+    home(); renderDrawer();
+  }
+  function home() {
+    $('[data-main]').innerHTML = `<div class="banner"><div><b>Autumn Drop</b><br><span>Fresh gear, free shipping over €50</span></div><span style="font-size:48px">✦</span></div><div class="pgrid" data-grid></div>`;
+    renderGrid();
+  }
+  function renderGrid() {
+    const g = $('[data-grid]'); if (!g) return;
+    const list = PRODUCTS.filter(p => p.name.toLowerCase().includes(q.toLowerCase()));
+    g.innerHTML = list.map((p, i) => `
+      <article class="pcard" style="--i:${i}">
+        <div class="pimg" style="--a:${p.a};--b:${p.b}">${p.emoji}</div>
+        <div class="pinfo"><div><h4>${p.name}</h4><p>${money(p.price)}</p></div><button class="add" data-add="${p.id}">Add</button></div>
+      </article>`).join('') || `<p class="empty">No products match “${q}”.</p>`;
+  }
+  const total = () => cart.reduce((s, l) => s + l.p.price * l.qty, 0);
+  const count = () => cart.reduce((s, l) => s + l.qty, 0);
+  function renderDrawer() {
+    $('[data-drawer]').innerHTML = `
+      <h3>Your bag <button data-close-cart>×</button></h3>
+      ${cart.map(l => `<div class="line-item"><div class="th" style="--a:${l.p.a};--b:${l.p.b}">${l.p.emoji}</div><div class="grow"><b>${l.p.name}</b><br><small>Qty ${l.qty}</small></div><b>${money(l.p.price * l.qty)}</b></div>`).join('') || '<p class="empty">Your bag is empty.</p>'}
+      <div class="total"><span>Total</span><span>${money(total())}</span></div>
+      <button class="cta" data-checkout ${cart.length ? '' : 'disabled'}>Checkout →</button>`;
+    const b = $('[data-badge]'); b.textContent = count();
+    b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump');
+  }
+  function add(id, btn) {
+    const p = PRODUCTS.find(x => x.id === id), line = cart.find(l => l.p === p);
+    line ? line.qty++ : cart.push({ p, qty: 1 });
+    fly(btn.closest('.pcard').querySelector('.pimg'));
+    setTimeout(renderDrawer, 650);
+  }
+  function fly(img) {
+    const f = root.getBoundingClientRect(), r = img.getBoundingClientRect(), c = $('[data-open-cart]').getBoundingClientRect(), s = S();
+    const g = img.cloneNode(true); g.classList.add('ghost');
+    Object.assign(g.style, { left: (r.left - f.left) / s + 'px', top: (r.top - f.top) / s + 'px', width: r.width / s + 'px', height: r.height / s + 'px' });
+    root.appendChild(g);
+    const dx = (c.left + c.width / 2 - r.left - r.width / 2) / s, dy = (c.top + c.height / 2 - r.top - r.height / 2) / s;
+    g.animate([
+      { transform: 'translate(0,0) scale(1)', opacity: 1 },
+      { transform: `translate(${dx * .5}px, ${dy * .5 - 160}px) scale(.55) rotate(-12deg)`, opacity: 1, offset: .5 },
+      { transform: `translate(${dx}px, ${dy}px) scale(.12) rotate(10deg)`, opacity: .3 },
+    ], { duration: 750, easing: 'cubic-bezier(.5,0,.3,1)' }).finished.then(() => g.remove());
+  }
+  function openCart(open = true) { $('[data-drawer]').classList.toggle('open', open); }
+  function checkout() {
+    openCart(false);
+    $('[data-main]').innerHTML = `
+      <div class="checkout">
+        <div><h3>Checkout</h3>
+          <label class="field">Name<div>Alex Morgan</div></label>
+          <label class="field">Address<div>Grote Markt 1, 1000 Brussels</div></label>
+          <label class="field">Payment<div>•••• •••• •••• 4242 &nbsp;·&nbsp; Apple Pay</div></label>
+        </div>
+        <div class="summary"><h3>Summary</h3>
+          ${cart.map(l => `<div class="line-item"><div class="th" style="--a:${l.p.a};--b:${l.p.b}">${l.p.emoji}</div><div class="grow">${l.p.name} <small>×${l.qty}</small></div><b>${money(l.p.price * l.qty)}</b></div>`).join('')}
+          <div class="total"><span>Total</span><span>${money(total())}</span></div>
+          <button class="cta" data-pay>Pay ${money(total())}</button>
+        </div>
+      </div>`;
+  }
+  function pay(btn) {
+    btn.classList.add('loading');
+    setTimeout(() => {
+      $('[data-main]').innerHTML = `<div class="done"><div class="tick"><svg width="64" height="64" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" pathLength="1" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div><h3>Order confirmed!</h3><p>Order #LMN-${Math.floor(1000 + Math.random() * 9000)} · arriving Thursday</p><button class="add" data-continue style="margin:14px auto 0">Keep shopping</button></div>`;
+      cart = []; renderDrawer(); confetti();
+    }, 1300);
+  }
+  function confetti() {
+    const colors = ['#ff5e8a', '#ffc94d', '#6be6a1', '#6cb8ff', '#b28cff'];
+    for (let i = 0; i < 140; i++) {
+      const c = document.createElement('i'); c.className = 'confetti';
+      c.style.background = colors[i % colors.length];
+      root.appendChild(c);
+      const a = Math.random() * Math.PI * 2, v = 250 + Math.random() * 450;
+      c.animate([
+        { transform: 'translate(0,0) rotate(0)', opacity: 1 },
+        { transform: `translate(${Math.cos(a) * v}px, ${Math.sin(a) * v * .6 + 500}px) rotate(${Math.random() * 1080}deg)`, opacity: 0 },
+      ], { duration: 1600 + Math.random() * 1200, easing: 'cubic-bezier(.1,.8,.3,1)' }).finished.then(() => c.remove());
+    }
+  }
+  vp.addEventListener('click', e => {
+    const t = e.target.closest('[data-add],[data-open-cart],[data-close-cart],[data-checkout],[data-pay],[data-continue],[data-clear]');
+    if (!t) return;
+    if (t.dataset.add) add(t.dataset.add, t);
+    else if (t.hasAttribute('data-open-cart')) openCart(!$('[data-drawer]').classList.contains('open'));
+    else if (t.hasAttribute('data-close-cart')) openCart(false);
+    else if (t.hasAttribute('data-checkout')) checkout();
+    else if (t.hasAttribute('data-pay')) pay(t);
+    else if (t.hasAttribute('data-continue')) home();
+    else if (t.hasAttribute('data-clear')) { q = ''; $('[data-search]').value = ''; renderGrid(); }
+  });
+
+  // ---- Autopilot: a fake cursor performs the happy path ----
+  const wait = ms => { const id = run; return new Promise((res, rej) => setTimeout(() => id === run ? res() : rej('abort'), ms)); };
+  async function moveTo(sel, dur = 750) {
+    const el = typeof sel === 'string' ? $(sel) : sel;
+    const f = root.getBoundingClientRect(), r = el.getBoundingClientRect(), s = S();
+    const to = { x: (r.left - f.left + r.width / 2) / s - 6, y: (r.top - f.top + r.height / 2) / s - 4 };
+    await cursor.animate([{ transform: `translate(${pos.x}px,${pos.y}px)` }, { transform: `translate(${to.x}px,${to.y}px)` }],
+      { duration: dur, easing: 'cubic-bezier(.65,0,.35,1)', fill: 'forwards' }).finished;
+    pos = to; await wait(0); return el;
+  }
+  async function click(sel) {
+    const el = await moveTo(sel);
+    cursor.classList.add('press');
+    const rp = document.createElement('div'); rp.className = 'ripple';
+    Object.assign(rp.style, { left: pos.x + 6 + 'px', top: pos.y + 4 + 'px' }); root.appendChild(rp); setTimeout(() => rp.remove(), 700);
+    await wait(140); cursor.classList.remove('press'); el.click(); await wait(250);
+  }
+  async function type(sel, text) {
+    const el = await moveTo(sel); el.focus();
+    for (const ch of text) { el.value += ch; el.dispatchEvent(new Event('input', { bubbles: true })); await wait(120); }
+    el.blur();
+  }
+  const caps = [...document.querySelectorAll('#demoSteps li')];
+  const setCap = i => caps.forEach((li, j) => { li.classList.toggle('on', j === i); li.classList.toggle('done', j < i); });
+
+  async function tour() {                  // ← edit this script to match your app's happy path
+    setCap(0); await wait(500);
+    await type('[data-search]', 'sneak'); await wait(600);
+    setCap(1); await click('[data-add="p1"]'); await wait(900);
+    await click('[data-clear]'); await wait(500);
+    await click('[data-add="p3"]'); await wait(900);
+    setCap(2); await click('[data-open-cart]'); await wait(1400);
+    setCap(3); await click('[data-checkout]'); await wait(1300);
+    await click('[data-pay]'); await wait(1500);
+    setCap(4); caps[4].classList.add('done');
+  }
+  async function autopilot() {
+    if (touring) return reset();
+    reset(); touring = true; cursor.classList.add('show');
+    try { await tour(); await wait(1200); } catch (e) { if (e !== 'abort') console.error(e); }
+    touring = false; cursor.classList.remove('show');
+  }
+  function reset() { run++; touring = false; cart = []; q = ''; cursor.classList.remove('show'); setCap(-1); shell(); }
+
+  document.querySelector('[data-autopilot]')?.addEventListener('click', e => { e.currentTarget.blur(); autopilot(); });
+  document.querySelector('[data-reset]')?.addEventListener('click', e => { e.currentTarget.blur(); reset(); });
+  document.addEventListener('deckkey', e => {
+    if (!slides[cur].hasAttribute('data-demo')) return;
+    if (e.detail === 'a' || e.detail === 'A') autopilot();
+    if (e.detail === 'r' || e.detail === 'R') reset();
+  });
+  document.addEventListener('slidechange', e => { if (!e.detail.slide.hasAttribute('data-demo') && touring) reset(); });
+  shell();
+  // ?tour auto-starts the autopilot when the demo slide is opened (kiosk loops, headless tests)
+  if (new URLSearchParams(location.search).has('tour'))
+    document.addEventListener('slidechange', e => { if (e.detail.slide.hasAttribute('data-demo')) setTimeout(autopilot, 1200); });
+  return { reset, autopilot };
+})();
+
+// Boot: honour #N in the URL (1-based)
+go.ran = false;
+go(Math.max(0, (parseInt(location.hash.slice(1)) || 1) - 1));
+</script>
+</body>
+</html>

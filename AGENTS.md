@@ -1,5 +1,21 @@
 # Blocks: Tectonic Hackathon kit
 
+## Agent compatibility and repository state
+
+Shared project guidance is in this file. Claude Code loads it via CLAUDE.md;
+Codex and Cursor can read it directly. Reusable skills are authored in
+`.claude/skills/` and copied to `.agents/skills/` for Codex and Cursor. Read
+`SKILLS.md` for the catalog and maintenance commands. Do not edit generated
+copies; run `python scripts/sync_skills.py` after changing a source skill or asset.
+Resolve skill assets relative to its SKILL.md and kit commands from the repo root.
+Named Claude subagents are optional: perform the corresponding skill workflow
+with the current agent when delegation is unavailable or not authorized.
+
+This repository currently ships instructions and skills, not the runnable Blocks
+kit described below. Confirm app.py, blocks/ and dependency files exist before
+using kit commands. Report missing prerequisites; do not fabricate successful
+app tests or recreate the kit merely to carry out a documentation task.
+
 A Streamlit demo plus reusable AI building blocks for a 4-hour hackathon (Tectonic, 30 Sept 2026, tracks **KBC** bank/insurer and **SD Worx** HR & payroll). The goal is a working **3-minute demo** that judges love, not production code. Read `README.md` for the event facts and the game plan.
 
 ## Priorities (in order)
