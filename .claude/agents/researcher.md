@@ -19,4 +19,4 @@ Output (max about 25 lines):
 2. **Pitch-ready line**: one sentence the team can say on stage, if relevant.
 3. **Confidence and gaps**: what you couldn't verify.
 
-If maintaining research notes is in scope, update `.claude/skills/be-domain/references/facts.md` with source, applicability and checked date. Tell the caller to run `python scripts/sync_skills.py` so the Codex/Cursor copy stays current. Never mark a claim verified merely because it was in the inherited file.
+If the request asks you to record the result, append it to `.claude/skills/be-domain/references/facts.md` with source, scope and date checked (the Codex/Cursor copy is re-synced automatically by the edit hook; otherwise `py scripts/sync_skills.py`). Never mark a claim verified merely because it was already in the file.

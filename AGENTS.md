@@ -1,68 +1,68 @@
-# Blocks: Tectonic Hackathon kit
+# IF-ELSE: Tectonic Hackathon team kit
 
-## Agent compatibility and repository state
+Shared guidance for every coding agent. Claude Code loads it through `CLAUDE.md`;
+Codex and Cursor read it directly. Skills are authored in `.claude/skills/` and
+copied to `.agents/skills/` (see `SKILLS.md`; never edit the copy).
 
-Shared project guidance is in this file. Claude Code loads it via CLAUDE.md;
-Codex and Cursor can read it directly. Reusable skills are authored in
-`.claude/skills/` and copied to `.agents/skills/` for Codex and Cursor. Read
-`SKILLS.md` for the catalog and maintenance commands. Do not edit generated
-copies; run `python scripts/sync_skills.py` after changing a source skill or asset.
-Resolve skill assets relative to its SKILL.md and kit commands from the repo root.
-Named Claude subagents are optional: perform the corresponding skill workflow
-with the current agent when delegation is unavailable or not authorized.
+## The event
+Tectonic Hackathon round 1: **Wed 30 Sept 2026, 18:00–23:00, Gent**. Two tracks,
+**KBC** (bank/insurer) and **SD Worx** (HR & payroll), each with a real business
+case. Top 16 per track go to the final on 20 Oct (EUR 10,000). "No coding
+experience required", so judges weigh business value and the pitch at least as
+much as code. `README.md` has the facts, the timeline and the checklist.
 
-This repository currently ships instructions and skills, not the runnable Blocks
-kit described below. Confirm app.py, blocks/ and dependency files exist before
-using kit commands. Report missing prerequisites; do not fabricate successful
-app tests or recreate the kit merely to carry out a documentation task.
-
-A Streamlit demo plus reusable AI building blocks for a 4-hour hackathon (Tectonic, 30 Sept 2026, tracks **KBC** bank/insurer and **SD Worx** HR & payroll). The goal is a working **3-minute demo** that judges love, not production code. Read `README.md` for the event facts and the game plan.
+## What we are building
+Nothing yet, on purpose. There is no starter kit in this repo: the team builds
+the demo app from scratch on the day, in whatever stack is fastest for the
+challenge (default: Python + Streamlit + Gemini, see `/scaffold`). Skills
+describe patterns and checks, not existing files. Do not look for `blocks/`,
+`app.py` or `smoke_test.py` unless the team has created them; if a skill needs
+something that does not exist yet, build the smallest version of it.
 
 ## Priorities (in order)
-1. **The demo path always works.** Never leave `app.py` broken. After any change, run it and click the happy path.
-2. **Business value you can see on screen**: a real user, a painful moment, and a number (€ or hours saved).
-3. **Reuse the kit.** Don't write a new LLM client, RAG pipeline or PII masker. The ones below already work.
-4. Fake anything that isn't on screen. Hardcode, seed, and cache freely.
+1. **The demo path always works.** Never leave the entry point broken. After
+   any change, run the app and click the happy path.
+2. **Business value you can see on screen**: a real user, a painful moment, and
+   a number (EUR or hours saved).
+3. **Fake anything that isn't on screen.** Hardcode, seed and cache freely.
+4. Working beats pretty beats clever. No unit tests, no abstractions, no
+   refactors after T−90 min.
 
-## The kit (use these, don't rewrite them)
-```python
-from blocks import llm
-llm.ask(prompt, system=None, backend=None)              # -> str
-llm.chat(messages, backend=None, **kw)                   # -> assistant message dict
-llm.stream(messages, backend=None)                       # -> iterator; st.write_stream(llm.stream(...))
-llm.extract(text, PydanticModel, instructions="")        # -> validated model; retries on bad JSON
-llm.run_agent(task, [py_fn, ...], on_step=cb)            # tools = type-hinted fns WITH docstrings
-llm.embed(texts)
-from blocks.rag import Index                             # Index.from_folder("data/docs"), .save/.load, .answer(q) -> (text, hits)
-from blocks.pii import mask, unmask                      # masked, vault = mask(text, names=[...]); unmask(reply, vault)
-from blocks.voice import speak, transcribe               # ElevenLabs; speak() -> mp3 bytes
-```
-- Every `llm` call takes `backend="ollama" | "gemini" | "openai"`. The default comes from `LLM_BACKEND` in `.env`.
-- **Gemini** (`gemini-2.5-flash`) gives quality. **Ollama** (`qwen3.5:4b`, local) is the offline/privacy fallback and is weak at extraction. Don't remove `reasoning_effort: none` for Ollama.
-- `run_agent` builds tool schemas from type hints and docstrings. Primitive params only (str/int/float/bool). Docstrings are the tool descriptions, so make them precise.
-- Always `mask()` before sending customer or employee text to a cloud backend (see `safe_ask` in `app.py`). It is a pitch point: "PII never leaves in the clear".
+## Conventions for the demo app
+- One demo step per screen or tab. Every input has a seeded default or a
+  "▶ Demo example" button. A spinner with human text on every AI call. The
+  headline impact number is visible in the UI.
+- An explicit **Approve / Reject** step before any agent action that changes
+  data, pays, or contacts a person. KBC: "Kate never acts without explicit
+  customer approval". SD Worx: "humans supervise payroll agents". Enforce it in
+  code, not in the prompt; Reject and reruns must never execute.
+- Cloud LLM (Gemini, a tech partner) for quality. If the pitch claims privacy,
+  mask personal data before the cloud call and keep the claim exactly as true as
+  the code. Ollama + qwen3.5:4b is installed on Henri's laptop as an offline
+  fallback.
+- Every AI call site: `try/except` → friendly warning plus a cached or hardcoded
+  fallback. A stack trace on stage is a lost round.
+- Answer in the user's language (NL/FR/EN) with Belgian terms (paritair comité,
+  rijksregisternummer, Peppol, itsme). Never invent Belgian law or sponsor
+  figures: use `/be-domain` or label the number "illustrative".
+- Only synthetic data in the repo. Never commit `.env`.
+- Python style: 3.12+, type hints, pydantic for anything structured, short
+  docstrings, one or two files until that hurts.
 
-## Data
-`data/synthetic/`, regenerated by `uv run python -m blocks.synth` (seeded, deterministic):
-- `employees.csv` (60): employee_id E1000…, name, language nl/fr, region, department, contract, fte, joint_committee, gross_monthly_eur, annual_leave_days, leave_taken_days, manager_id, iban, company_car, meal_vouchers
-- `absences.csv`, `payslips.csv` (gross, social_security, withholding_tax, net…; figures are ILLUSTRATIVE)
-- `customers.csv` (40): customer_id C5000…, segment, iban, risk_profile
-- `transactions.csv` (~4.3k): customer_id, date, counterparty, category, amount (<0 = spend), flag (`suspicious` rows are planted)
-- `inbox.json` (25): multilingual NL/FR/EN messages for HR and bank channels
-- Challenge PDFs go in `data/docs/`, then `uv run python -m blocks.build_index data/docs` → `data/index.npz`
+## Working in parallel (3–4 people, one repo)
+- Own **files**, not features: one file per demo step, the entry point is owned
+  by the demo owner only. This is what keeps merges trivial.
+- Small commits on `main`; pull before push, every 20–30 minutes. Branches only
+  for risky experiments; a git worktree when an agent runs a long task.
+- After every merge: run the app, click the path. Broken for more than 10
+  minutes → revert.
+- Keep `PLAN.md` (from `/kickoff`) and `DEMO_SCRIPT.md` (from
+  `/demo-hardening`) current. The presenter and the agents both read them.
 
-## Commands (Windows, uv)
-```powershell
-uv sync
-uv run streamlit run app.py
-uv run python smoke_test.py            # or: smoke_test.py gemini
-uv run python -m blocks.synth
-uv run python -m blocks.build_index data/docs
-```
-
-## Conventions
-- Python 3.12+, type hints, pydantic models for anything structured. Keep code in the existing style: short module docstring with usage, few comments.
-- UI: one tab per demo step. Use `st.spinner` on every LLM call, `st.metric` for the headline number, and an explicit **Approve / Reject** button before any agent action that changes data or contacts a customer (KBC insists on explicit customer approval).
-- Answer in the user's language (NL/FR/EN). Belgian context: joint committees, rijksregisternummer, Peppol, itsme.
-- Never commit `.env` or real personal data. Only synthetic data goes in the repo.
-- Don't invent Belgian law or figures in the UI or pitch. If unsure, label it "illustrative" or check the facts reference.
+## Skills workflow
+Brief → `/brainstorm` (interactive, the whole team) → `/kickoff` → `/scaffold` → build with `/demo-step`, `/challenge-data`,
+`/rag-grounding`, `/prompt-eval`, `/be-domain`, `/impact-calc` → T−60
+`/demo-hardening`, `/demo-check`, `/privacy-check` → `/epic-pitch-deck`,
+`/pitch-rehearsal` → `/submission-pack`. The Claude subagents (`researcher`,
+`judge`, `demo-tester`, `security-check`) are optional wrappers around those
+skills; any agent can run the skill itself.

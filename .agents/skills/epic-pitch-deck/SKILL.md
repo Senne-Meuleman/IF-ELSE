@@ -7,7 +7,7 @@ description: Build an animated HTML hackathon pitch deck with an optional intera
 
 Build a presentation that makes a room lean forward: a single `index.html` with cinematic motion, a strong story and a live, clickable product demo that can't crash on stage.
 
-Read AGENTS.md and the actual challenge first. Resolve assets, references and scripts relative to this SKILL.md, and output paths relative to the repository root. Use any available browser and image-viewing tools; Claude-in-Chrome is not required. Report unavailable verification honestly. A mock must be labeled as a simulation and must not replace a requested working application demo.
+Read `AGENTS.md`, `PLAN.md` and `DEMO_SCRIPT.md` first: the deck tells the same story as the live demo, in the same order. Resolve assets, references and scripts relative to this SKILL.md; write the deck to `presentation/index.html` in the repository. The mock demo inside the deck is the **backup** for when the live app dies; label it as a simulation in the notes and never present it as the working integration. Budget: 30–40 minutes, no more.
 
 You start from a working engine (`assets/deck-template.html`): 1920×1080 scaled stage, slide transitions, entrance choreography, build steps, counters, split-text, a presenter-notes window, and a mock webshop with a scripted "autopilot" tour. Your job is the story, the design and the choreography. Don't rebuild the plumbing.
 
@@ -86,11 +86,11 @@ Read `references/demo-mock.md` before touching the demo. In short: model the moc
 
 ### 7. Verify — don't hand over an unchecked deck
 
-Run both checks from the skill directory (the scripts need Chrome or Edge; Python may be `py` on Windows):
+Run both checks from the skill directory (the scripts find Chrome or Edge themselves; on Windows use `py` instead of `python`):
 
 ```bash
 node scripts/smoke_test.mjs <deck.html>             # per-slide overflow + JS errors, then watches the autopilot run
-python scripts/screenshot_slides.py <deck.html> <out_dir>   # PNG of each slide's final state
+py scripts/screenshot_slides.py <deck.html> <out_dir>   # PNG of each slide's final state
 ```
 
 Then **look at every screenshot** yourself (Read the PNGs). Check for overflow, collisions, unreadable contrast, orphaned words in headlines, empty-looking slides and emoji that render as boxes. `smoke_test` must end with "All clear", and the autopilot log must reach its final caption step. If the Claude-in-Chrome browser tools are available, also open the deck and step through it with the keyboard to see the motion. Screenshots only show end states.

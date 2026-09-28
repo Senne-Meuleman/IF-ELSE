@@ -1,6 +1,6 @@
 # Belgian domain facts: HR/payroll, banking, e-invoicing, EU regulation
 
-Research notes originally collected on **2026-09-28** for the Tectonic Hackathon (30 Sept 2026). These inherited claims have not been independently reverified in the cross-agent skills update. Rules for using this file:
+Research notes collected on **2026-09-27/28** for the Tectonic Hackathon (30 Sept 2026), mostly from secondary sources. Rules for using this file:
 - Treat entries as leads, not validated legal advice. Open the linked source and verify current primary-source support before repeating a legal rule, deadline, rate or sponsor figure. If verification is unavailable, say so rather than guessing.
 - ⚠️ means the fact is uncertain, recently changed, or still being legislated. Say that out loud when you use it.
 - Most sources are secondary (payroll providers, law firms, press). For anything legally binding, point experts to the official text.

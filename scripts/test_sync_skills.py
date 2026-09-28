@@ -67,6 +67,14 @@ class SyncSkillsTests(unittest.TestCase):
             self.run_sync()
         self.assertFalse(self.target.exists())
 
+    def test_crlf_source_is_not_drift(self) -> None:
+        self.run_sync()
+        lf = self.skill.read_bytes().replace(b"\r\n", b"\n")
+        self.skill.write_bytes(lf.replace(b"\n", b"\r\n"))
+        self.assertEqual(self.run_sync("--check"), 0)
+        copied = self.target / "example" / "SKILL.md"
+        self.assertNotIn(b"\r\n", copied.read_bytes())
+
     def test_mismatched_name_rejected(self) -> None:
         self.skill.write_text(self.skill.read_text().replace("name: example", "name: other"))
         with self.assertRaisesRegex(ValueError, "must match"):

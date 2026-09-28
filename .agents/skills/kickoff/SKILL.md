@@ -1,66 +1,70 @@
 ---
 name: kickoff
-description: Turn a hackathon challenge brief into a winning plan in minutes. Picks one user and one painful moment, writes the 3-minute pitch skeleton, scopes the demo to what fits in the remaining time, maps it onto the Blocks kit (which app.py tabs to keep, rename or delete) and splits the work across 3–4 teammates. Use at the start of the hackathon or whenever the user pastes or points to a challenge brief, case description, or PDF from KBC / SD Worx, or says "we got the challenge", "what should we build", "plan this", "re-scope", or "we're behind".
+description: Turn the chosen idea (from /brainstorm, or a pasted brief) into a concrete plan in minutes - persona and painful moment confirmed, the 3-minute pitch skeleton, the demo scoped to the remaining time, every demo step mapped to what gets built or faked, and the work split across 3–4 teammates by file, saved as PLAN.md. Use after the brainstorm, or when the user says "plan this", "make the plan", "who does what", "re-scope", or "we're behind". For open-ended "what could we build" questions, use /brainstorm first.
 ---
 
 # Kickoff: brief → plan
 
-The clock is the enemy. Produce a plan the team can start on **within 15 minutes** of reading the brief. Be decisive: recommend one direction and don't list options for the team to discuss.
+The clock is the enemy. Produce a plan the team can start on **within 15 minutes**.
+The divergent thinking belongs in `/brainstorm`; this skill converges. Be
+decisive: one direction, concrete owners, a cut list.
 
 ## 1. Read the brief
-- If it's a PDF or in `data/docs/`, read all of it (use the pdf skill for PDFs). If it's pasted, use that.
-- Also read `README.md` (event facts, game plan) and `AGENTS.md` (the kit).
-- Confirm which kit files actually exist before assigning implementation work. If app.py or blocks/ is absent, identify the missing prerequisite in the plan. Use the available PDF reader or text extractor; a specifically named PDF skill is optional.
-- Note the **sponsor's own words** for success, the users they name, any data they provide, and any required tech. Quote them back later in the pitch.
-- Default time left is 240 minutes if the user doesn't say.
+- If it's a PDF, read all of it (use the available PDF reader). If it's pasted, use that.
+- Also read `README.md` (event facts, likely challenge shapes) and `AGENTS.md` (priorities, conventions).
+- Note the **sponsor's own words** for success, the users they name, any data they provide, and any required tech. Quote them back in the pitch.
+- Default time left is 240 minutes if the user doesn't say. Ask the mentors when pitches start if unknown.
 
 ## 2. Pick ONE user and ONE painful moment
-Brainstorm 3–5 candidate angles silently, then score each 1–5 on:
+If `BRAINSTORM.md` exists or the team has already chosen, take that pick and its
+reasons; skip the scoring unless the team asks. If nothing has been chosen yet,
+offer `/brainstorm` (15 interactive minutes) and, if the team prefers a fast
+plan, brainstorm 3–5 candidate angles silently and score each 1–5 on:
 | Criterion | Question |
 |---|---|
 | Sponsor fit | Does it solve *their* stated case, in their words? |
 | Visible pain | Can we show the "before" misery in 15 seconds? |
-| Number | Is there an obvious € / hours / % we can claim? (see `/impact-calc`) |
-| Demo-ability | Can the full happy path run in under 60 seconds on screen? |
-| Buildable | Does it fit in (time left − 60 min) with the kit? |
-| Wow | Agentic behaviour, voice (ElevenLabs), multilingual NL/FR, or privacy (PII masking / local model)? |
+| Number | Is there an obvious EUR / hours / % we can claim? (see `/impact-calc`) |
+| Demo-ability | Can the full happy path run in under 60 seconds on screen, in 3–4 clicks? |
+| Buildable | Does it fit in (time left − 60 min) with `/scaffold` + `/demo-step` patterns? |
+| Wow | Agentic behaviour with visible approval, voice (ElevenLabs), NL/FR, privacy (PII masking)? |
 
 Pick the top one. Show the table briefly so the team sees why.
 
-KBC: always include a **human-in-the-loop approval** step. SD Worx: think "humans supervise payroll agents" (their June 2026 direction).
+KBC: always include a **human-in-the-loop approval** step ("Kate never acts without explicit customer approval"). SD Worx: think "humans supervise payroll agents" (their June 2026 launch). Both: an AI Act / GDPR-aware line earns trust with the experts in the room.
 
 ## 3. Write the pitch skeleton first (3 minutes)
 ```
 0:00  Hook: persona + painful moment + one number        (20s)
 0:20  Why now / why it's hard (regulation, volume, languages) (20s)
 0:40  LIVE DEMO: the happy path, 3–4 clicks               (80s)
-2:00  Impact: € / hours / risk reduced, with assumptions  (25s)
-2:25  Why it's credible: privacy, human in the loop, uses their stack, next steps (25s)
+2:00  Impact: EUR / hours / risk reduced, with assumptions (25s)
+2:25  Why it's credible: privacy, human in the loop, uses their stack, next step (25s)
 2:50  Ask / closing line                                  (10s)
 ```
-Fill it with concrete text: persona name, the demo input (for example `inbox.json` MSG003 or customer C5007), what appears on screen, and the closing line.
+Fill it with concrete text: persona name, the exact demo input (the NL email, customer C5007), what appears on screen, the closing line.
 
-## 4. Scope the demo against the kit
-Map every demo step to a building block, and mark what gets faked:
-| Demo step | Block | Real / faked | Owner |
-|---|---|---|---|
-- Tabs in `app.py`: 💬 Assistant (RAG chat), 📥 Inbox triage (`extract`), 🤖 Agent (`run_agent` with tools), 📊 Data. Say which to **keep, rename or delete**.
-- New data needed? → `/challenge-data`. Challenge PDFs → `data/docs/` + `build_index`.
-- Cut list: what we explicitly will **not** build.
+## 4. Scope the demo
+Map every demo step to what gets built and what gets faked:
+| Demo step | Screen | AI call (ask / extract / agent / RAG / voice) | Data needed | Real / faked | Owner |
+|---|---|---|---|---|---|
+- Stack: default from `/scaffold` (Python + Streamlit + Gemini) unless the brief or team says otherwise.
+- Data: what synthetic tables and planted cases → `/challenge-data`. Documents from the brief → `/rag-grounding`.
+- **Cut list**: what we explicitly will **not** build (login, real integrations, a second persona, mobile layout…).
 
 ## 5. Team split and timeline
-Roles for 3–4 people (adjust to team size):
-- **Demo owner**: owns `app.py`, keeps the happy path working at every moment, merges.
-- **AI builder**: prompts, schemas, agent tools, data.
-- **Story and numbers**: impact calc, domain facts (`/be-domain`), pitch deck (`/epic-pitch-deck`), asks the sponsor mentors questions.
-- **(4th) Wow feature**: voice, a second persona, or a polish tab. Cut it first if time runs short.
+Roles for 3–4 people, **each owning files, not features** (see `AGENTS.md`):
+- **Demo owner**: `app.py`, scaffold, merges, keeps the happy path working at every moment, `DEMO_SCRIPT.md`.
+- **AI builder**: prompts, pydantic schemas, agent tools, the hardest step.
+- **Story and numbers**: `/impact-calc`, `/be-domain` facts, `/epic-pitch-deck`, mentor questions, pitch.
+- **(4th) Wow feature**: voice, a chart, a second language, polish. First thing cut if late.
 
-Timeline relative to now, based on the README plan: build until T−45 min → **feature freeze** → demo-hardening + demo-check skills → record a backup video → rehearse twice. For less than 60 minutes remaining, prioritize one working path and rehearsal. A task split is for teammates; it does not require spawning agents or creating branches.
+Timeline relative to now: `/scaffold` by T+30 → build until **T−60 feature freeze** → `/demo-hardening`, `/demo-check`, `/privacy-check` → backup video → `/pitch-rehearsal` twice → `/submission-pack` at T−20. With under 60 minutes left: one working path and rehearsal, nothing else.
 
 ## 6. Questions for the mentors
-List 3–5 short questions to ask KBC / SD Worx mentors in the first 30 minutes (what success means, volumes, current process time, what they'd pilot).
+3–5 short questions for the KBC / SD Worx mentors in the first 30 minutes: what does success look like, volumes, minutes per case today, who does the work now, what would they pilot, what data or documents can they share.
 
 ## Output
-One compact plan with these sections: **Pick** (with the scores) · **Pitch skeleton** · **Demo map** · **Cut list** · **Who does what until when** · **Mentor questions**. Save it as `PLAN.md` when planning files are in scope, preserving existing decisions. If the user requested implementation too, continue with the first authorized build task; a planning-only request does not authorize unrelated changes.
+One compact plan with sections **Pick** (with scores) · **Pitch skeleton** · **Demo map** · **Cut list** · **Who does what until when** · **Mentor questions**. Save it as `PLAN.md`. Then start `/scaffold` if the user asked to build.
 
-If the user says "re-scope" or "we're behind", redo only steps 4–5 with the minutes left, and cut aggressively.
+If the user says "re-scope" or "we're behind", redo only steps 4–5 with the minutes left, and cut aggressively: the demo path first, everything else after.

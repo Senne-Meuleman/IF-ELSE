@@ -1,4 +1,8 @@
-"""Validate and copy Claude skill sources to Codex/Cursor. Run with --check in CI."""
+"""Validate and copy Claude skill sources to Codex/Cursor. Run with --check in CI.
+
+    py scripts/sync_skills.py            # Windows
+    python3 scripts/sync_skills.py       # macOS / Linux
+"""
 
 import argparse
 import re
@@ -8,11 +12,19 @@ ROOT = Path(__file__).resolve().parents[1]
 SOURCE = ROOT / ".claude" / "skills"
 TARGET = ROOT / ".agents" / "skills"
 IGNORED = {"__pycache__", ".DS_Store"}
+# Text files are compared and copied with LF line endings, so a Windows editor
+# that writes CRLF (or git autocrlf) can never make the copies "differ".
+TEXT_SUFFIXES = {".md", ".py", ".mjs", ".js", ".html", ".css", ".json", ".txt", ".yml", ".yaml", ".csv"}
+
+
+def _read(path: Path) -> bytes:
+    data = path.read_bytes()
+    return data.replace(b"\r\n", b"\n") if path.suffix.lower() in TEXT_SUFFIXES else data
 
 
 def inventory(folder: Path) -> dict[Path, bytes]:
     return {
-        path.relative_to(folder): path.read_bytes()
+        path.relative_to(folder): _read(path)
         for path in sorted(folder.rglob("*"))
         if path.is_file() and not any(part in IGNORED for part in path.parts)
         and path.suffix != ".pyc"
@@ -24,7 +36,7 @@ def validate(files: dict[Path, bytes]) -> None:
     if not skills:
         raise ValueError("No skills found")
     for path in skills:
-        text = files[path].decode("utf-8").replace("\r\n", "\n")
+        text = files[path].decode("utf-8")
         if not text.startswith("---\n") or "\n---\n" not in text[4:]:
             raise ValueError(f"{path}: missing YAML frontmatter")
         header, body = text[4:].split("\n---\n", 1)
@@ -47,7 +59,7 @@ def main() -> int:
     args = parser.parse_args()
     source = inventory(SOURCE)
     validate(source)
-    target = inventory(TARGET)
+    target = inventory(TARGET) if TARGET.exists() else {}
     stale = sorted(set(target) - set(source))
     changed = [path for path, data in source.items() if target.get(path) != data]
     if stale:
@@ -57,7 +69,7 @@ def main() -> int:
             print(f"  {TARGET / path}")
         return 1
     if args.check and changed:
-        print("Skill copies differ. Run: python scripts/sync_skills.py")
+        print("Skill copies differ. Run: py scripts/sync_skills.py  (python3 on macOS/Linux)")
         for path in changed:
             print(f"  {path}")
         return 1

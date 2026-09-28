@@ -1,6 +1,6 @@
 ---
 name: impact-calc
-description: Build a credible, defensible business-impact number (euros saved, hours freed, errors or fraud avoided, payback) for a hackathon idea, with every assumption explicit and sourced or flagged. Use whenever the team needs "the number" for the pitch, an ROI or business case, a "why this matters" slide, an impact metric to show in the Streamlit app, or when a judge might ask "how much does this save?". Also trigger on "business value", "impact", "ROI", "how big is this problem".
+description: Build a credible, defensible business-impact number (euros saved, hours freed, errors or fraud avoided, payback) for a hackathon idea, with every assumption explicit and sourced or flagged. Use whenever the team needs "the number" for the pitch, an ROI or business case, a "why this matters" slide, an impact metric to show in the demo UI, or when a judge might ask "how much does this save?". Also trigger on "business value", "impact", "ROI", "how big is this problem".
 ---
 
 # Impact calc
@@ -23,7 +23,7 @@ Judges at a sponsor hackathon (KBC, SD Worx) score **business value**, so a pitc
 1. A small assumptions table: `Assumption | Value | Source or "estimate"`.
 2. The calculation in 3–5 lines.
 3. **One headline sentence for the pitch**, for example: *"For a 1,000-person client that's 3,100 HR hours a year, about 2 FTE freed for real people-work."* Offer a conservative and an optimistic version, and recommend using the conservative one.
-4. Optionally, a Python snippet or `st.metric` row for `app.py` so the number appears in the demo, computed from the demo's own counters (for example "12 emails triaged in 40 s ≈ 36 min saved").
+4. A metric row for the demo UI (for Streamlit: `st.metric`) so the number appears on screen, ideally computed from the demo's own counters (for example "12 emails triaged in 40 s ≈ 36 min saved").
 5. The 2 hardest questions a judge could ask about the number, with one-line answers.
 
 Never present an estimate as a sponsor figure. If a fact about Belgian regulation or the sponsor is used, it must come from `/be-domain` or a cited source.

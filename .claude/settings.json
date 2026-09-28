@@ -1,21 +1,65 @@
 {
   "permissions": {
+    "defaultMode": "acceptEdits",
     "allow": [
-      "Bash(uv run:*)",
-      "Bash(uv sync:*)",
-      "Bash(uvx pip-audit:*)",
+      "Bash(uv:*)",
+      "Bash(uvx:*)",
+      "Bash(py:*)",
+      "Bash(python:*)",
+      "Bash(python3:*)",
+      "Bash(node:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(streamlit:*)",
+      "Bash(ollama list:*)",
+      "Bash(ollama ps:*)",
+      "Bash(ollama pull:*)",
       "Bash(git status:*)",
       "Bash(git diff:*)",
       "Bash(git log:*)",
       "Bash(git grep:*)",
       "Bash(git ls-files:*)",
       "Bash(git check-ignore:*)",
+      "Bash(git branch:*)",
+      "Bash(git switch:*)",
+      "Bash(git checkout -b:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git fetch:*)",
+      "Bash(git pull:*)",
+      "Bash(git merge:*)",
+      "Bash(git stash:*)",
+      "Bash(git worktree:*)",
+      "Bash(gh pr:*)",
       "Bash(curl -s localhost:*)",
+      "Bash(curl -s http://localhost:*)",
+      "Bash(curl -s http://127.0.0.1:*)",
       "WebSearch",
       "WebFetch"
     ],
     "deny": [
-      "Read(./.env)"
+      "Read(./.env)",
+      "Read(./.env.local)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean:*)",
+      "Bash(rm -rf:*)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if command -v py >/dev/null 2>&1; then py scripts/hooks/after_edit.py; else python3 scripts/hooks/after_edit.py; fi",
+            "timeout": 30,
+            "statusMessage": "Syntax check / skill sync"
+          }
+        ]
+      }
     ]
   }
 }

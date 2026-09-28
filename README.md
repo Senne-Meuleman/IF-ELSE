@@ -1,91 +1,92 @@
-# Tectonic Hackathon: prep kit
+# Tectonic Hackathon: team IF-ELSE prep kit
 
-**This checkout contains the agent instructions and skills; the runnable Blocks
-application described below is not included.** Bring in the kit before running
-the Streamlit, uv or data-generation commands. See [SKILLS.md](SKILLS.md) for the
-eleven skills shared by Claude Code, Codex (GPT models) and Cursor agents.
+This repo holds the team's **agent instructions, skills and checklists**. There is
+no starter app on purpose: we build the demo from scratch on the day with the
+`/scaffold` skill, in whatever stack fits the challenge. See
+[SKILLS.md](SKILLS.md) for the 15 skills shared by Claude Code, Codex and Cursor.
 
-## What we know (researched 27 Sept 2026)
+## What we know (researched 27–28 Sept 2026)
 
 | | |
 |---|---|
-| **Round 1 (preselection)** | **Wed 30 Sept 2026, 18:00–23:00** at Sassevaartstraat 46, Gent. Same time in 7 cities, 700+ builders. Some press says "four hours", so expect about 4h of actual building. |
+| **Round 1 (preselection)** | **Wed 30 Sept 2026, 18:00–23:00** at Sassevaartstraat 46, Gent. Same time in 7 cities, 700+ builders. Expect about 4 h of actual building, then pitches. |
 | **Final** | Tue 20 Oct 2026, De Vooruit, Gent. Top 32 teams (16 per track). You must be able to attend. |
-| **Teams** | 3–4 people. Solo sign-ups are matched on the platform. **Registration closes 29 Sept.** |
+| **Teams** | 3–4 people. **Registration closes 29 Sept.** |
 | **Tracks** | **KBC** (bank/insurer) and **SD Worx** (HR & payroll). Each brings "a real business case from their own organisation". |
-| **Tech partners** | Google Cloud (Gemini), ElevenLabs (voice), Cursor, Aikido (security scanning). Using them is likely to earn you goodwill. |
-| **Prize** | €10,000 in the final. Note: *"solutions may be used by the sponsoring companies"*. |
-| **Vibe** | Conference theme is **Agentic AI**. "No coding experience required", so judging will weigh business value and pitch more than code. |
+| **Tech partners** | Google Cloud (Gemini), ElevenLabs (voice), Cursor, Aikido (security scanning). Using them visibly earns goodwill. |
+| **Prize** | EUR 10,000 in the final. Note: *"solutions may be used by the sponsoring companies"*. |
+| **Vibe** | Conference theme is **Agentic AI**. "No coding experience required", so judging weighs business value and pitch more than code. |
+
+The briefs and judging criteria are not public. The `be-domain` skill's
+`references/facts.md` has 140 lines of sourced Belgian HR, payroll, banking,
+fraud, Peppol and AI Act facts for the pitch.
 
 ## Likely challenge shapes (speculation)
 
-**SD Worx**: their own internal hackathon winners were (1) *an AI agent that turns legal documents into payroll validation rules* and (2) *an agent that turns unstructured customer emails into system actions*. In June 2026 they announced multi-agent payroll operations, where humans supervise AI agents. Likely challenges:
-- Email/ticket → structured HR action (leave, sickness, address or bank change) → **`Inbox triage` tab**
-- Regulation / collective agreement (CAO/CCT, joint committees) → rules, or "what changed and who is affected" → **RAG + extract**
-- Employee self-service assistant in NL/FR/EN ("why is my net pay lower?", "can I go 4/5?") → **RAG chat + agent**
-- **EU Pay Transparency Directive** (member states had to transpose it by June 2026): pay-gap reporting, explaining salary bands
+**SD Worx**: their own internal hackathon winners were (1) *an agent that turns legal documents into payroll validation rules* and (2) *an agent that turns unstructured customer emails into system actions*. In June 2026 they launched multi-agent payroll operations where humans supervise AI agents. Likely:
+- Email/ticket → structured HR action (leave, sickness, address or bank change), with a human approving the action
+- Regulation / collective agreement (CAO/CCT, joint committees) → rules, or "what changed and who is affected" (RAG + extraction)
+- Employee self-service assistant in NL/FR/EN ("why is my net pay lower?", "can I go 4/5?")
+- **EU Pay Transparency Directive** (Belgium missed the June 2026 deadline): pay-gap reporting, explaining salary bands
 - Absence and wellbeing signals, planning and scheduling
 
-**KBC**: Kate (their assistant, 5.8M active users) already answers 7 out of 10 questions and is exploring agentic AI, but only *"with explicit customer approval"*. Put a human-in-the-loop confirm step in any agent demo. Likely challenges:
-- Scam and fraud detection, and *explaining* alerts to customers → `transactions.csv` has planted `suspicious` rows
+**KBC**: Kate (5.8M users) already answers 7 out of 10 questions and is exploring agentic AI, but only *"with explicit customer approval"*. Put a human-in-the-loop confirm step in any agent demo. Likely:
+- Scam and fraud detection, and *explaining* alerts to customers (phishing losses EUR 93M in 2025)
 - Financial coaching and budgeting from transactions; SME / self-employed cash-flow forecasting
 - Belgian B2B **e-invoicing (Peppol)**, mandatory since 2026: invoice extraction and reconciliation
 - Customer message triage, KYC/AML document checks, insurance claims (KBC is also an insurer)
 
-**For both**: privacy and GDPR matter. The pitch line *"runs locally / PII masked before any cloud call"* is supported by `blocks/pii.py` and the Ollama backend.
+**For both**: privacy and GDPR matter. "PII is masked before any cloud call" is a strong pitch line, and cheap to make true.
 
-## Game plan for 4 hours
+## Game plan for the evening
 
-| Time | Do |
-|---|---|
-| 0:00–0:30 | Read the brief twice. Ask the KBC/SD Worx mentors what "success" means for them. Pick **one** user and **one** painful moment. |
-| 0:30–0:45 | Write the 3-minute pitch skeleton first (problem → demo → impact in € or hours → why us). Build only what the demo needs. |
-| 0:45–3:15 | Build. One person keeps the demo path working at all times. Fake anything that isn't on screen. |
-| 3:15–3:45 | Feature freeze. Rehearse the demo twice. Record a backup video of it working. |
-| 3:45– | Pitch. Lead with the customer's pain and a number. |
+| Time | Do | Skill |
+|---|---|---|
+| T+0:00 | Read the brief twice. Ask the KBC / SD Worx mentors what "success" means. 15-minute interactive brainstorm, converge on **one** user and **one** painful moment. | `/brainstorm`, `researcher` in the background |
+| T+0:15 | Pitch skeleton first (problem → demo → impact in EUR or hours → why us). Build only what the demo needs. | `/kickoff` → `PLAN.md` |
+| T+0:30 | Scaffold the app, first AI call working, first commit. | `/scaffold` |
+| T+0:45 → T+3:00 | Build. One person keeps the demo path working at all times. Fake anything that isn't on screen. | `/demo-step`, `/challenge-data`, `/rag-grounding`, `/prompt-eval`, `/be-domain`, `/impact-calc` |
+| T+3:00 | **Feature freeze.** Replay cache, approvals, reset, fallbacks. Record a backup video. | `/demo-hardening`, `/demo-check`, `/privacy-check` |
+| T+3:20 | Deck and rehearsal, twice, timed. | `/epic-pitch-deck`, `/pitch-rehearsal`, `judge` |
+| T+3:45 | Submit: README, one-liner, video, links. | `/submission-pack` |
+| Pitch | Lead with the customer's pain and a number. End with the ask. | |
 
-## The kit
+## Stack (decided on the day, defaults below)
 
-```
-blocks/llm.py      ask / chat / stream / extract(text, PydanticModel) / run_agent(task, [python fns]) / embed
-                   one client for ollama (local) | gemini | any OpenAI-compatible API
-blocks/rag.py      Index.from_folder("data/docs").answer(q) with citations; bge-m3 is multilingual NL/FR/EN
-blocks/pii.py      mask()/unmask(): IBAN, rijksregisternummer, VAT, email, phone, card, names
-blocks/voice.py    ElevenLabs speak() / transcribe()
-blocks/synth.py    fake Belgian employees, absences, payslips, customers, 4k transactions, multilingual inbox
-blocks/cache.py    DEMO_CACHE=record|replay: replays LLM answers offline when the venue Wi-Fi dies
-app.py             Streamlit demo shell: Assistant (RAG) · Inbox triage · Agent with tools · Data
-smoke_test.py      checks everything end to end
-```
+- **Default**: Python 3.12 + `uv` + Streamlit + Gemini (`gemini-2.5-flash` through
+  the OpenAI-compatible endpoint, so any model is one env var away). Fastest path
+  from nothing to a clickable demo, and Google Cloud is a partner.
+- **Offline fallback** on Henri's laptop: Ollama with `qwen3.5:4b` (chat, weak at
+  extraction) and `bge-m3` (multilingual embeddings). Set
+  `OLLAMA_CONTEXT_LENGTH=8192` if RAG prompts get truncated.
+- **Voice**: ElevenLabs REST (`eleven_multilingual_v2` handles NL/FR). One `speak()`
+  call makes a pitch memorable; do it last.
+- Snippets for all of this (LLM client, extraction, tool loop, PII mask, replay
+  cache, approval gate, synthetic data) are in the `scaffold` skill's
+  `references/snippets.md`.
 
-```powershell
-uv run python smoke_test.py            # local model  (all pass: ~3–8 s per call on RTX 2060)
-uv run python smoke_test.py gemini     # after adding GEMINI_API_KEY to .env
-uv run streamlit run app.py
-uv run python -m blocks.synth          # regenerate data/synthetic
-uv run python -m blocks.build_index data/docs   # embed the challenge PDFs you receive
-```
-
-**Models:** `qwen3.5:4b` runs 100% on the 6 GB GPU at about 54 tok/s. It's good enough for a live demo and "on-prem" pitch, but weaker at extraction (it leaves fields null). **Use Gemini for quality and keep Ollama as the offline fallback** for bad venue Wi-Fi. `bge-m3` is used for embeddings. Thinking is disabled for Ollama in `llm.py`, because otherwise qwen3.5 spends the whole context thinking and returns nothing.
-
-## Agent helpers (Claude Code, Codex and Cursor)
+## Agent helpers
 
 Claude Code uses `.claude/skills/`; Codex and Cursor use the synchronized
-`.agents/skills/`. In Codex use `$skill-name`; in Claude Code and Cursor use
-`/skill-name`. See [SKILLS.md](SKILLS.md) for all workflows and synchronization.
-The Claude subagents below are optional; demo-check, privacy-check and
-pitch-rehearsal provide equivalent workflows without those subagents.
+`.agents/skills/`. In Codex type `$skill-name`; in Claude Code and Cursor
+`/skill-name`. Subagents (Claude Code only): `researcher`, `judge`,
+`demo-tester`, `security-check`.
+
 | When | Use |
 |---|---|
-| Brief arrives | `/kickoff` (plan, pitch skeleton, task split) · `researcher` agent in the background · `judge` agent on the chosen idea |
-| Building | `/challenge-data` · `/be-domain` before any law or number · `/impact-calc` for the headline number |
-| After each merge | `demo-tester` agent |
-| Feature freeze (T−45) | `/demo-hardening` → `demo-tester` → `security-check` → `/epic-pitch-deck` → `judge` on the pitch |
+| Brief arrives | `/brainstorm` with the whole team · `researcher` in the background · `/kickoff` on the pick · `judge` on the plan |
+| First 30 min | `/scaffold` |
+| Building | `/demo-step` for every screen · `/challenge-data` · `/be-domain` before any law or number · `/impact-calc` for the headline number · `/rag-grounding` if documents are involved · `/prompt-eval` when extraction misbehaves |
+| After each merge | `demo-tester` (or `/demo-check`) |
+| Feature freeze (T−60) | `/demo-hardening` → `/demo-check` → `security-check` → `/epic-pitch-deck` → `judge` on the pitch |
+| Last 20 min | `/submission-pack` |
 
 ## Checklist before Wednesday
-- [ ] Registered and in a team (deadline **29 Sept**). Agree on who pitches.
-- [ ] Copy `.env.example` → `.env`; get a **Gemini key** at aistudio.google.com and an **ElevenLabs key** (free tier); run `smoke_test.py gemini`.
-- [ ] Optional: `setx OLLAMA_CONTEXT_LENGTH 8192` then restart Ollama, so bigger RAG prompts aren't truncated at 4096 tokens.
-- [ ] Laptop charger, extension lead, phone hotspot. Pull any models at home, because venue Wi-Fi will be slow.
-- [ ] Read 10 min on: SD Worx agentic payroll press release (June 2026), KBC Kate, EU Pay Transparency Directive, Belgian Peppol e-invoicing.
-- [ ] Teammates: `git clone` this repo, install uv, run `uv sync`.
+
+- [ ] Registered and in a team (deadline **29 Sept**). Agree on who pitches and who owns the demo path.
+- [ ] Everyone: `git clone` this repo, install `uv`, open it once in Claude Code / Codex / Cursor and check the skills are listed.
+- [ ] Keys ready in a private note (never in the repo): **Gemini** (aistudio.google.com/apikey) and **ElevenLabs** (free tier). Test both with a 5-line script.
+- [ ] Henri: `ollama pull qwen3.5:4b bge-m3` done; test the deck pipeline once (`node scripts/smoke_test.mjs` in the `epic-pitch-deck` skill; Edge is enough).
+- [ ] Laptop chargers, extension lead, phone hotspot, HDMI/USB-C adapter. Venue Wi-Fi will be slow.
+- [ ] Read 10 min: `be-domain/references/facts.md` "Most useful for a pitch" block; SD Worx agentic payroll press release; KBC Kate; EU Pay Transparency; Peppol.
+- [ ] Decide the team name shown on screen and the presenter's opening line.

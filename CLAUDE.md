@@ -1,19 +1,17 @@
 @AGENTS.md
 
-See `SKILLS.md` for the shared eleven-skill catalog and maintenance instructions.
-New workflows: `/demo-check`, `/privacy-check`, `/prompt-eval`, `/rag-grounding`
-and `/pitch-rehearsal`. `.claude/skills/` is canonical; after edits run
-`python scripts/sync_skills.py` to update the Codex/Cursor copy.
-
-## Claude Code helpers in `.claude/`
-Skills (invoke with `/name`):
-- `/kickoff`: paste the challenge brief and get the user, pain, pitch skeleton, scope, which tabs to keep, and a team task split
-- `/be-domain`: verified Belgian HR/payroll/banking/regulation facts. Load it before stating any law, rate or date.
-- `/impact-calc`: € / hours-saved business case with explicit assumptions
-- `/demo-hardening`: offline replay cache, approve buttons, reset, seeded inputs. Run it at feature freeze.
-- `/challenge-data`: extend `blocks/synth.py` with the tables the brief needs
-- `/epic-pitch-deck`: the animated HTML pitch with a mock demo
-
-Subagents: `researcher` (web facts with sources), `demo-tester` (smoke test + clicks through the app), `judge` (scores the idea and pitch, asks hard questions), `security-check` (keys, PII, OWASP basics).
-
-During the build, when several teammates or tasks run in parallel, give each feature its own git worktree or branch and merge often. Run `demo-tester` after every merge.
+## Claude Code specifics
+- Skills: `/brainstorm`, `/kickoff`, `/scaffold`, `/demo-step`, `/challenge-data`, `/be-domain`,
+  `/impact-calc`, `/rag-grounding`, `/prompt-eval`, `/demo-hardening`,
+  `/demo-check`, `/privacy-check`, `/epic-pitch-deck`, `/pitch-rehearsal`,
+  `/submission-pack`. Catalog and maintenance in `SKILLS.md`.
+- Subagents: `researcher` (sourced web facts, run it in the background),
+  `judge` (scores the idea or the pitch, asks the hard questions),
+  `demo-tester` (clicks through the demo and reports), `security-check`
+  (secrets, PII, unsafe agent actions).
+- `.claude/skills/` is the source. A PostToolUse hook re-syncs
+  `.agents/skills/` on every skill edit and syntax-checks any edited `.py`
+  file, so a broken entry point is reported immediately.
+- On this machine `python` is not on PATH: use `py` or `uv run python`.
+- When several tasks run in parallel, give each its own file (see "Working in
+  parallel" above) or its own worktree, and run `demo-tester` after each merge.
