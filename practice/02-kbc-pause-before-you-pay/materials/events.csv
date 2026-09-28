@@ -1,0 +1,20 @@
+# SYNTHETIC practice data by team IF-ELSE. Fictional people, accounts and messages. Not KBC data. Digital banking events (logins, devices, limits). Location is derived from IP and approximate.
+event_id,customer_id,datetime,event_type,device,location,detail
+E701,C5001,2026-09-26T08:12:10,login,iPhone 14 (known),Gent,
+E702,C5002,2026-09-22T14:31:02,login,Windows PC (known),Namur,
+E703,C5002,2026-09-27T23:31:47,login,Windows PC (known),Namur,first login after 22:00 in 90 days
+E704,C5003,2026-09-25T19:40:55,login,Samsung Galaxy S23 (known),Leuven,
+E705,C5004,2026-09-17T10:01:12,login,iPad (known),Hasselt,
+E706,C5004,2026-09-28T09:19:30,login,iPad (known),Hasselt,
+E707,C5005,2026-09-25T20:02:19,login,iPhone 15 (known),Aalst,
+E708,C5005,2026-09-25T20:04:33,limit_change,iPhone 15 (known),Aalst,"daily limit 2500 -> 15000, confirmed with itsme"
+E709,C5005,2026-09-28T10:13:51,login,iPhone 15 (known),Aalst,
+E710,C5006,2026-09-27T18:01:20,login,Pixel 8 (known),Schaerbeek,
+E711,C5007,2026-09-26T10:43:02,login,iPhone 13 (known),Etterbeek,
+E712,C5008,2026-09-20T15:22:08,login,Samsung Galaxy A34 (known),Mechelen,
+E713,C5008,2026-09-27T10:26:14,new_device_enrolled,Android SM-A155F (new),unknown (VPN),enrolled via itsme confirmation
+E714,C5008,2026-09-27T10:29:40,login,Android SM-A155F (new),unknown (VPN),
+E715,C5008,2026-09-27T10:38:02,payee_added,Android SM-A155F (new),unknown (VPN),Kevin Bakker
+E716,C5009,2026-09-24T09:15:44,login,Windows PC (known),Liège,
+E717,C5009,2026-09-26T17:48:30,login,Windows PC (known),Liège,
+E718,C5010,2026-09-28T08:55:12,login,iPhone SE (known),Antwerpen,

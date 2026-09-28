@@ -1,0 +1,48 @@
+{
+  "_synthetic": "SYNTHETIC: fictional employee requests written by team IF-ELSE for a practice drill. Names and IDs match materials/employees.csv. Not real people.",
+  "company": "Vlaskaai Logistics NV (fictional)",
+  "mailbox": "hr@vlaskaai.example",
+  "exported_at": "2026-09-28T09:00:00+02:00",
+  "requests": [
+    {
+      "request_id": "REQ-2026-031",
+      "received_at": "2026-09-14T21:42:00+02:00",
+      "employee_id": "SYN-1102",
+      "from_name": "Eva Lambrechts",
+      "language": "NL",
+      "channel": "email",
+      "subject": "Vraag over loon teamleaders",
+      "body": "Beste HR,\n\nIk ben sinds januari 2020 teamleader in het magazijn. In de krant las ik dat werknemers nu het recht hebben om te vragen wat collega's in dezelfde functie gemiddeld verdienen. Mag ik weten wat het gemiddelde loon is van de mannelijke en van de vrouwelijke teamleaders? Ik heb de indruk dat ik minder verdien dan mannelijke collega's die even lang in dienst zijn, en mijn loon lijkt me ook laag voor mijn functie.\n\nAlvast bedankt,\nEva Lambrechts"
+    },
+    {
+      "request_id": "REQ-2026-032",
+      "received_at": "2026-09-17T10:05:00+02:00",
+      "employee_id": "SYN-1146",
+      "from_name": "Laetitia Delvaux",
+      "language": "FR",
+      "channel": "email",
+      "subject": "Demande d'information sur la rémunération",
+      "body": "Bonjour,\n\nJe souhaiterais connaître le salaire moyen des hommes et le salaire moyen des femmes qui exercent la même fonction que moi (coordinatrice qualité et sécurité), ainsi que les critères utilisés pour fixer ma rémunération et mon bonus.\n\nMerci d'avance pour votre réponse,\nLaetitia Delvaux"
+    },
+    {
+      "request_id": "REQ-2026-033",
+      "received_at": "2026-09-22T07:58:00+02:00",
+      "employee_id": "SYN-1051",
+      "from_name": "Nathalie Bogaerts",
+      "language": "NL",
+      "channel": "HR portal",
+      "subject": "Waarom niveau 2?",
+      "body": "Hallo,\n\nWaarom zit ik nog in niveau 2? Bijna alle mannelijke planners zitten in niveau 3 en ik doe hetzelfde werk: ik plan dezelfde ritten voor dezelfde klanten. Wat moet ik doen om naar niveau 3 te gaan? En wat verdienen de planners in niveau 3 gemiddeld, mannen en vrouwen apart?\n\nGroetjes,\nNathalie"
+    },
+    {
+      "request_id": "REQ-2026-034",
+      "received_at": "2026-09-25T16:20:00+02:00",
+      "employee_id": "SYN-1074",
+      "from_name": "Nadia Benali",
+      "language": "EN",
+      "channel": "email",
+      "subject": "Am I paid less than the men?",
+      "body": "Hi,\n\nI work 4/5 in customer service. A male colleague showed me his payslip and his gross is about 750 euro higher than mine. Is that because I'm a woman? What do the men in customer service earn on average compared to the women?\n\nAlso, my contract says my pay follows \"the internal scale\". Where can I read that scale?\n\nThanks,\nNadia"
+    }
+  ]
+}

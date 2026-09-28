@@ -1,0 +1,95 @@
+{
+  "_note": "SYNTHETIC practice data by team IF-ELSE. Fictional people, accounts and messages. Not KBC data. Assume customers shared these messages with the bank (forwarded to Kate or read out to the fraud line). In reality the bank does not see a customer's SMS, email or WhatsApp. All phone numbers, links and domains are fictional (.example is a reserved domain).",
+  "messages": [
+    {
+      "msg_id": "M301",
+      "channel": "SMS",
+      "datetime": "2026-09-27T21:05:00",
+      "customer_id": "C5002",
+      "sender": "CBC-Info",
+      "language": "FR",
+      "text": "CBC: Un nouvel appareil a été ajouté à votre compte le 27/09 à 20:58. Ce n'est pas vous ? Appelez immédiatement notre service sécurité au 02 000 47 11 pour bloquer l'accès."
+    },
+    {
+      "msg_id": "M302",
+      "channel": "WhatsApp",
+      "datetime": "2026-09-28T08:47:00",
+      "customer_id": "C5004",
+      "sender": "+44 7700 900418 (unknown number)",
+      "language": "NL",
+      "text": "Hoi mama, dit is mijn nieuw nummer, mijn gsm is in het water gevallen. Sla je dit nummer op? Ik moet vandaag nog een factuur betalen maar mijn bankapp werkt niet op de nieuwe gsm. Kan jij 950 euro overschrijven naar LT14 3467 5003 4797 1592 op naam van Tom Claes? Ik betaal je morgen terug. Niet bellen aub, mijn micro werkt niet. Xx Tom"
+    },
+    {
+      "msg_id": "M303",
+      "channel": "email",
+      "datetime": "2026-09-26T16:20:00",
+      "customer_id": "C5005",
+      "sender": "verkoop@garage-vermeulen.example",
+      "language": "NL",
+      "text": "Beste heer De Smet, bedankt voor uw bezoek en de ondertekende bestelbon 2026-0412 voor de Volkswagen Polo (2023, 38.000 km). Het resterende bedrag van EUR 12.500 mag u overschrijven naar BE13 1800 0790 9139 op naam van Garage Vermeulen BV. Levering dinsdag 29/09 vanaf 14u. Wij vragen nooit om naar een ander rekeningnummer te betalen. Met vriendelijke groeten, Hilde Vermeulen"
+    },
+    {
+      "msg_id": "M304",
+      "channel": "email",
+      "datetime": "2026-09-27T17:40:00",
+      "customer_id": "C5006",
+      "sender": "facturation@plomberie-dewulf.example",
+      "language": "FR",
+      "text": "Bonjour M. El Amrani, suite à l'intervention du 25/09 (remplacement du chauffe-eau), veuillez trouver la facture 2026-118 de 685,00 EUR TVAC. Paiement sur BE96 6987 9736 1005 (Plomberie Dewulf SRL) sous 14 jours. Merci pour votre confiance, Vincent Dewulf"
+    },
+    {
+      "msg_id": "M305",
+      "channel": "SMS",
+      "datetime": "2026-09-27T10:12:00",
+      "customer_id": "C5008",
+      "sender": "itsme",
+      "language": "NL",
+      "text": "itsme: uw account verloopt vandaag. Heractiveer binnen 24 uur om blokkering te vermijden: https://itsme-heractiveren.example/nl"
+    },
+    {
+      "msg_id": "M306",
+      "channel": "WhatsApp",
+      "datetime": "2026-09-26T09:58:00",
+      "customer_id": "C5007",
+      "sender": "Chloé Renard (contact)",
+      "language": "EN",
+      "text": "Hey! Thanks for coming last night. Total at the restaurant was 186 for four of us, so 46.50 each. My IBAN is BE84 2031 7621 5659, no rush!"
+    },
+    {
+      "msg_id": "M307",
+      "channel": "email",
+      "datetime": "2026-09-27T19:12:00",
+      "customer_id": "C5010",
+      "sender": "verhuur@immo-verbeke.example",
+      "language": "NL",
+      "text": "Dag Lotte, welkom in de Kloosterstraat! Zoals afgesproken bij de ondertekening van het huurcontract: eerste huur en kosten voor oktober, samen EUR 1.050, op BE11 5474 9795 8448 (Immo Verbeke BV). De huurwaarborg zet je apart op een geblokkeerde rekening. Groetjes, Jeroen Verbeke"
+    },
+    {
+      "msg_id": "M308",
+      "channel": "email",
+      "datetime": "2026-09-25T07:33:00",
+      "customer_id": "C5009",
+      "sender": "securite@cbc-alerte.example",
+      "language": "FR",
+      "text": "Cher client, un nouvel appareil a été ajouté à votre profil CBC Mobile. Si vous n'êtes pas à l'origine de cette action, contactez notre helpdesk au 02 000 83 90 afin de sécuriser votre compte."
+    },
+    {
+      "msg_id": "M309",
+      "channel": "WhatsApp",
+      "datetime": "2026-09-21T20:14:00",
+      "customer_id": "C5001",
+      "sender": "+44 7700 900127 (unknown number)",
+      "language": "NL",
+      "text": "Hoi papa, ik heb een nieuw nummer. Mijn oude gsm is kapot. Kan je me even helpen met een betaling? Ik leg het straks uit."
+    },
+    {
+      "msg_id": "M310",
+      "channel": "email",
+      "datetime": "2026-09-10T11:02:00",
+      "customer_id": "C5009",
+      "sender": "gestion@meuse-gestion.example",
+      "language": "FR",
+      "text": "Madame, Monsieur, veuillez trouver l'appel de fonds du 4e trimestre pour la copropriété Résidence Val-Benoît : 420,00 EUR, à verser sur le compte habituel du syndic. Meuse Gestion SRL"
+    }
+  ]
+}

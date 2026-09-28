@@ -1,0 +1,31 @@
+client_id,client_name,client_email_domain,employee_id,first_name,last_name,language,joint_committee,contract_type,weekly_hours,iban,street,postcode,city,gross_monthly_eur
+C01,Nuvelio Software BV,nuvelio.be,E1001,Thomas,Maes,NL,PC 200,white-collar,38,BE22645680291347,Kortemunt 41,9000,Gent,3950
+C01,Nuvelio Software BV,nuvelio.be,E1002,Jonas,Peeters,NL,PC 200,white-collar,38,BE87751372999594,Brusselsesteenweg 212,9050,Gentbrugge,3400
+C01,Nuvelio Software BV,nuvelio.be,E1003,Jens,Peeters,NL,PC 200,white-collar,30.4,BE11751516108748,Molenstraat 9,9820,Merelbeke,2980
+C01,Nuvelio Software BV,nuvelio.be,E1004,Sarah,Vermeulen,NL,PC 200,white-collar,38,BE73751842136660,Dendermondsesteenweg 88 bus 3,9040,Sint-Amandsberg,4450
+C01,Nuvelio Software BV,nuvelio.be,E1005,Arnaud,Dubois,FR,PC 200,white-collar,38,BE79973702260533,Rue de la Station 17,7700,Mouscron,3700
+C01,Nuvelio Software BV,nuvelio.be,E1006,Hanne,Goossens,NL,PC 200,white-collar,38,BE56001083624988,Kerkstraat 5,9230,Wetteren,3200
+C01,Nuvelio Software BV,nuvelio.be,E1007,Wout,De Smet,NL,PC 200,white-collar,38,BE22737464407347,Veldstraat 150,9000,Gent,5100
+C01,Nuvelio Software BV,nuvelio.be,E1008,Priya,Raman,EN,PC 200,white-collar,38,BE96645980240205,Coupure Links 63,9000,Gent,4200
+C02,Bouwwerken Vandamme & Zonen NV,vandamme-bouw.be,E2001,Dries,Vandenbussche,NL,PC 124,blue-collar,38,BE70377044977725,Meensesteenweg 301,8800,Roeselare,2850
+C02,Bouwwerken Vandamme & Zonen NV,vandamme-bouw.be,E2002,Kurt,Desmet,NL,PC 124,blue-collar,38,BE88001834400241,Ieperstraat 22,8870,Izegem,3050
+C02,Bouwwerken Vandamme & Zonen NV,vandamme-bouw.be,E2003,Bart,Lefever,NL,PC 124,blue-collar,38,BE89063297562285,Hoogstraat 14,8800,Rumbeke,2780
+C02,Bouwwerken Vandamme & Zonen NV,vandamme-bouw.be,E2004,Yannick,Debruyne,NL,PC 124,blue-collar,38,BE04737894144831,Stationsstraat 76,8830,Hooglede,2700
+C02,Bouwwerken Vandamme & Zonen NV,vandamme-bouw.be,E2005,Mehmet,Yilmaz,NL,PC 124,blue-collar,38,BE71363128615269,Noordlaan 8,8800,Roeselare,2820
+C02,Bouwwerken Vandamme & Zonen NV,vandamme-bouw.be,E2006,Stijn,Vanhoutte,NL,PC 124,blue-collar,38,BE85377540577906,Kortrijksestraat 190,8870,Izegem,2950
+C02,Bouwwerken Vandamme & Zonen NV,vandamme-bouw.be,E2007,Els,Vandamme,NL,PC 200,white-collar,38,BE02063676439740,Diksmuidsesteenweg 45,8800,Roeselare,3600
+C02,Bouwwerken Vandamme & Zonen NV,vandamme-bouw.be,E2008,Tom,Callewaert,NL,PC 200,white-collar,38,BE45001407789389,Beversesteenweg 12,8800,Roeselare,4100
+C03,Hôtel des Tilleuls SRL,hoteldestilleuls.be,E3001,Camille,Renard,FR,PC 302,blue-collar,38,BE46001848425936,Rue de Fer 33,5000,Namur,2350
+C03,Hôtel des Tilleuls SRL,hoteldestilleuls.be,E3002,Maxime,Lejeune,FR,PC 302,blue-collar,38,BE78143746112886,Chaussée de Louvain 118,5000,Namur,2400
+C03,Hôtel des Tilleuls SRL,hoteldestilleuls.be,E3003,Julie,Martin,FR,PC 302,white-collar,38,BE47734914164280,Avenue Reine Astrid 4,5000,Namur,2900
+C03,Hôtel des Tilleuls SRL,hoteldestilleuls.be,E3004,Sébastien,Leroy,FR,PC 302,blue-collar,30,BE72063339934616,Rue Mazy 61,5100,Jambes,1950
+C03,Hôtel des Tilleuls SRL,hoteldestilleuls.be,E3005,Aurélie,Dupont,FR,PC 302,white-collar,38,BE42973892751254,Rue du Lombard 20,5000,Namur,3300
+C03,Hôtel des Tilleuls SRL,hoteldestilleuls.be,E3006,Kevin,Hardy,FR,PC 302,blue-collar,38,BE08973275962913,Rue de Dave 142,5100,Jambes,2380
+C03,Hôtel des Tilleuls SRL,hoteldestilleuls.be,E3007,Inès,Benali,FR,PC 302,blue-collar,24,BE50143586269418,Rue Saint-Nicolas 9,5000,Namur,1500
+C03,Hôtel des Tilleuls SRL,hoteldestilleuls.be,E3008,Lucas,Mertens,FR,PC 302,blue-collar,38,BE90734698470232,Rue de Gembloux 250,5002,Saint-Servais,2450
+C04,Brightlane Logistics Belgium BV,brightlane-logistics.be,E4001,Laura,Van den Broeck,NL,PC 200,white-collar,38,BE11734464663048,Bruul 30,2800,Mechelen,4300
+C04,Brightlane Logistics Belgium BV,brightlane-logistics.be,E4002,Daan,Willems,NL,PC 200,white-collar,38,BE16068302324674,Liersesteenweg 77,2800,Mechelen,3900
+C04,Brightlane Logistics Belgium BV,brightlane-logistics.be,E4003,Chloé,Lambert,FR,PC 200,white-collar,38,BE85001661717306,Rue Haute 101,1000,Brussel,3550
+C04,Brightlane Logistics Belgium BV,brightlane-logistics.be,E4004,Michael,O'Connor,EN,PC 200,white-collar,38,BE46001827580636,Tervuursesteenweg 15,3000,Leuven,5200
+C04,Brightlane Logistics Belgium BV,brightlane-logistics.be,E4005,Nina,Hermans,NL,PC 200,white-collar,38,BE52751961422109,Mechelsesteenweg 250,2550,Kontich,3350
+C04,Brightlane Logistics Belgium BV,brightlane-logistics.be,E4006,Youssef,El Amrani,FR,PC 200,white-collar,38,BE55734444864944,Chaussée de Haecht 400,1030,Schaerbeek,3700

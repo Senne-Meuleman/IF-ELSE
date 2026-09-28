@@ -1,0 +1,8 @@
+# SYNTHETIC practice data by team IF-ELSE. Fictional people, accounts and messages. Not KBC data. Verification of Payee result for each pending transfer. name_suggested is only filled for a Close match.
+tx_id,name_entered,iban,vop_result,name_suggested,checked_at
+T90075,Marie-Thérèse Lambert,BE65 1809 1209 0696,No match,,2026-09-27T23:40:14
+T90077,Tom Claes,LT14 3467 5003 4797 1592,Not possible,,2026-09-28T09:22:53
+T90078,Garage Vermeulen BV,BE13 1800 0790 9139,Match,,2026-09-28T10:15:09
+T90074,Plomberie Dewolf,BE96 6987 9736 1005,Close match,PLOMBERIE DEWULF SRL,2026-09-27T18:03:45
+T90072,Kevin Bakker,BE22 1917 7588 2047,Match,,2026-09-27T10:41:31
+T90076,Immo Verbeke BV,BE11 5474 9795 8448,Match,,2026-09-28T08:57:03

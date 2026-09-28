@@ -90,3 +90,4 @@ Claude Code uses `.claude/skills/`; Codex and Cursor use the synchronized
 - [ ] Laptop chargers, extension lead, phone hotspot, HDMI/USB-C adapter. Venue Wi-Fi will be slow.
 - [ ] Read 10 min: `be-domain/references/facts.md` "Most useful for a pitch" block; SD Worx agentic payroll press release; KBC Kate; EU Pay Transparency; Peppol.
 - [ ] Decide the team name shown on screen and the presenter's opening line.
+- [ ] Run at least one drill from [`practice/`](practice/README.md) end to end (the 90-min sprint on challenge 01 is the warm-up), and fix the skills that hurt.

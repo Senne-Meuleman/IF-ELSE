@@ -1,0 +1,41 @@
+employee_id,name,category,hire_date,seniority_years,regime,weekly_hours,gross_monthly,legacy_allowance,meal_voucher_days,meal_voucher_employer_share,night_hours,night_premium_paid,contract_type
+BCL-1007,Nathalie De Smet,D,2025-03-17,1,FT,38.0,3155.00,0.00,22,8.91,0,0.00,permanent
+BCL-1014,Joris Lambert,C,2016-11-28,9,FT,38.0,3012.00,0.00,20,8.91,0,0.00,permanent
+BCL-1021,Sander Van Damme,B,2020-11-20,5,FT,38.0,2759.00,0.00,20,8.91,24,80.42,permanent
+BCL-1028,Justine Wouters,B,2017-02-06,9,FT,38.0,2629.00,0.00,21,8.91,0,0.00,permanent
+BCL-1035,Stijn Benali,B,2017-10-05,8,FT,38.0,2814.00,0.00,21,8.91,0,0.00,permanent
+BCL-1042,Hélène Moreau,B,2025-01-09,1,FT,38.0,2653.00,0.00,20,8.91,0,0.00,permanent
+BCL-1049,Charlotte Bogaert,C,2020-03-03,6,FT,38.0,3025.00,0.00,22,8.91,0,0.00,permanent
+BCL-1056,Tom Van den Broeck,C,2016-04-19,10,FT,38.0,3204.00,0.00,22,8.91,0,0.00,permanent
+BCL-1063,Hanne Dubois,A,2024-06-03,2,FT,38.0,2230.00,0.00,22,8.91,0,0.00,permanent
+BCL-1070,Joris Peeters,C,2021-01-11,5,FT,38.0,2920.00,0.00,22,8.91,0,0.00,permanent
+BCL-1077,Annelies Vermeulen,B,2024-01-08,2,PT,22.8,1544.00,0.00,13,8.91,0,0.00,permanent
+BCL-1084,Maxime Vandenberghe,A,2025-02-03,1,FT,38.0,2240.00,0.00,20,6.91,0,0.00,permanent
+BCL-1091,Marie Pirotte,C,2018-10-15,7,FT,38.0,3200.00,0.00,22,6.91,0,0.00,permanent
+BCL-1098,Griet Jacobs,A,2020-09-21,6,PT,19.0,1179.00,0.00,10,8.91,0,0.00,permanent
+BCL-1105,Ruben Benali,A,2019-01-05,7,FT,38.0,2469.00,0.00,22,8.91,0,0.00,permanent
+BCL-1112,Kevin Declercq,C,2015-03-16,11,FT,38.0,3220.00,75.00,20,8.91,0,0.00,permanent
+BCL-1119,Sofie Coppens,C,2014-09-01,12,FT,38.0,2950.00,90.00,21,8.91,0,0.00,permanent
+BCL-1126,Bart Simon,D,2024-04-22,2,FT,38.0,3340.00,0.00,22,6.91,0,0.00,permanent
+BCL-1133,Stijn Collard,C,2017-04-03,9,PT,30.4,2571.00,0.00,18,8.91,0,0.00,permanent
+BCL-1140,Kevin Verstraete,B,2022-05-02,4,FT,38.0,2520.00,0.00,21,6.91,0,0.00,permanent
+BCL-1147,Hélène Leclercq,D,2012-02-13,14,FT,38.0,3480.00,260.00,20,8.91,0,0.00,permanent
+BCL-1154,Ruben Martin,B,2019-05-20,7,FT,38.0,2555.00,0.00,21,8.91,0,0.00,permanent
+BCL-1161,Ward Benali,D,2012-12-21,13,FT,38.0,4025.00,0.00,21,8.91,0,0.00,permanent
+BCL-1168,Hélène Delvaux,B,2019-03-26,7,FT,38.0,2672.00,0.00,21,8.91,16,51.93,fixed_term
+BCL-1175,Aurélie Lambert,D,2023-02-19,3,FT,38.0,3416.00,0.00,22,8.91,0,0.00,permanent
+BCL-1182,Bart Lambert,A,2026-03-07,0,FT,38.0,2274.00,0.00,21,8.91,0,0.00,permanent
+BCL-1189,Griet Maes,A,2024-05-03,2,FT,38.0,2300.00,0.00,22,8.91,16,44.70,permanent
+BCL-1196,Ward Desmet,A,2026-08-17,0,PT,12.0,706.11,0.00,0,0.00,0,0.00,flexi
+BCL-1203,Bram Van den Broeck,A,2022-09-03,4,FT,38.0,2447.00,0.00,20,8.91,8,23.78,permanent
+BCL-1210,Lotte El Amrani,C,2009-12-14,16,FT,38.0,3256.00,0.00,20,8.91,0,0.00,permanent
+BCL-1217,Lotte Peeters,B,2011-09-05,15,FT,38.0,2790.00,120.00,20,8.91,0,0.00,permanent
+BCL-1224,Bart Moreau,B,2023-03-06,3,FT,38.0,2410.00,0.00,20,8.91,0,0.00,permanent
+BCL-1231,Karim Claes,C,2015-11-19,10,FT,38.0,3247.00,0.00,20,8.91,0,0.00,permanent
+BCL-1238,Yannick Lambert,A,2018-05-13,8,FT,38.0,2415.00,0.00,22,8.91,0,0.00,permanent
+BCL-1245,Nicolas Collard,A,2012-10-17,13,FT,38.0,2671.00,0.00,21,8.91,0,0.00,permanent
+BCL-1252,Elke Pirotte,A,2022-11-11,3,FT,38.0,2316.00,0.00,22,8.91,16,45.01,permanent
+BCL-1259,Charlotte El Amrani,B,2010-07-09,16,FT,38.0,2862.00,0.00,21,8.91,0,0.00,permanent
+BCL-1266,Ruben Delvaux,A,2018-10-15,7,FT,38.0,2409.00,0.00,21,8.91,40,117.04,permanent
+BCL-1273,Aurélie Denis,A,2021-06-14,5,FT,38.0,2210.00,0.00,22,8.91,0,0.00,permanent
+BCL-1280,Joris Coppens,A,2019-11-04,6,FT,38.0,2395.00,0.00,20,8.91,32,0.00,permanent

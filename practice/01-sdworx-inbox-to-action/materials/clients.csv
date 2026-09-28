@@ -1,0 +1,7 @@
+client_id,client_name,city,email_domain,main_language,joint_committees,contact_name,contact_email,contact_role,authorised_for_changes
+C01,Nuvelio Software BV,Gent,nuvelio.be,NL,PC 200,Sofie De Wilde,sofie.dewilde@nuvelio.be,HR & Office Manager,yes
+C01,Nuvelio Software BV,Gent,nuvelio.be,NL,PC 200,Nuvelio Payroll (shared mailbox),payroll@nuvelio.be,"Shared HR mailbox, read by Sofie De Wilde",yes
+C02,Bouwwerken Vandamme & Zonen NV,Roeselare,vandamme-bouw.be,NL,PC 124; PC 200,Katrien Vandamme,katrien.vandamme@vandamme-bouw.be,Zaakvoerder / personeelszaken,yes
+C03,Hôtel des Tilleuls SRL,Namur,hoteldestilleuls.be,FR,PC 302,Nathalie Collignon,n.collignon@hoteldestilleuls.be,Responsable administrative & RH,yes
+C04,Brightlane Logistics Belgium BV,Mechelen,brightlane-logistics.be,EN,PC 200,Emma Janssens,emma.janssens@brightlane-logistics.be,HR Business Partner,yes
+C04,Brightlane Logistics Belgium BV,Mechelen,brightlane-logistics.be,EN,PC 200,Olivier Wauters,olivier.wauters@brightlane-logistics.be,HR Manager Benelux,yes

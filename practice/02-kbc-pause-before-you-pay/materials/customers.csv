@@ -1,0 +1,12 @@
+# SYNTHETIC practice data by team IF-ELSE. Fictional people, accounts and messages. Not KBC data.
+customer_id,name,age_band,language,brand,city,digital_profile,known_payees,daily_transfer_limit_eur
+C5001,Jan Peeters,45-54,NL,KBC,Gent,high,34,2500
+C5002,Marie-Thérèse Lambert,75-84,FR,CBC,Namur,low,5,5000
+C5003,Luc Vandenberghe,55-64,NL,KBC,Leuven,medium,19,2500
+C5004,Ann Claes,65-74,NL,KBC,Hasselt,low,8,2500
+C5005,Pieter De Smet,35-44,NL,KBC,Aalst,high,41,15000
+C5006,Karim El Amrani,35-44,FR,KBC Brussels,Schaerbeek,high,27,2500
+C5007,Sarah O'Connor,25-34,EN,KBC Brussels,Etterbeek,high,12,2500
+C5008,Rita Maes,65-74,NL,KBC,Mechelen,medium,14,5000
+C5009,Marc Dupont,55-64,FR,CBC,Liège,medium,16,2500
+C5010,Lotte Hermans,18-24,NL,KBC,Antwerpen,high,9,1500

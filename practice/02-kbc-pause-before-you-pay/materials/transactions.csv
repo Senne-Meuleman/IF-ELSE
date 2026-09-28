@@ -1,0 +1,80 @@
+# SYNTHETIC practice data by team IF-ELSE. Fictional people, accounts and messages. Not KBC data. Outgoing transfers only, 30 Aug to 28 Sep 2026.
+tx_id,customer_id,datetime,amount_eur,counterparty_name,counterparty_iban,new_payee,channel,status,communication
+T90001,C5002,2026-08-31T14:14:10,42.00,Aqualis Eau SA,BE38458626939172,no,web,booked,Acompte eau
+T90002,C5005,2026-08-31T14:47:05,312.00,Kinderopvang Het Bijtje vzw,BE28968623620520,no,app,booked,Opvang september
+T90003,C5006,2026-08-31T16:05:31,890.00,Logements Bruxellois SCRL,BE70292709491725,no,app,booked,Loyer
+T90004,C5010,2026-08-31T17:27:38,520.00,Studentenhuis Kiel BV,BE45597891489889,no,app,booked,Huur kot
+T90005,C5010,2026-09-01T08:05:17,29.00,Fitness Zuid,BE08284541023513,no,app,booked,Abonnement
+T90006,C5003,2026-09-01T12:03:24,80.00,Hockeyclub Leuven vzw,BE63537785955508,no,app,booked,Lidgeld
+T90007,C5001,2026-09-02T09:33:07,164.18,Wijnhandel Verhaeghe,BE47302697926780,no,app,booked,Factuur
+T90008,C5007,2026-09-02T09:46:13,45.00,Telenetix BV,BE63603347013908,no,app,booked,Mobile
+T90009,C5002,2026-09-02T12:02:08,95.00,Résidence Les Tilleuls ACP,BE33908061673146,no,web,booked,Charges communes
+T90010,C5009,2026-09-03T08:32:48,41.59,Librairie Pax,BE11092387683948,no,app,booked,Livres
+T90011,C5004,2026-09-03T11:12:40,150.00,Tom Claes,BE05965210884775,no,app,booked,Voor je verjaardag
+T90012,C5001,2026-09-03T20:40:35,113.74,Tandartspraktijk Lievens,BE56054682973188,no,web,booked,Consultatie
+T90013,C5007,2026-09-04T10:10:20,120.00,Stichting Fietsverhuur Utrecht,NL17RVBA4582906427,yes,app,booked,Bike rental deposit
+T90014,C5010,2026-09-04T20:11:42,15.03,Kringwinkel Zuid,BE14943570001283,no,app,booked,Aankoop
+T90015,C5010,2026-09-05T10:20:41,18.50,Emma Jacobs,BE33431295101046,yes,app,booked,Pizza
+T90016,C5003,2026-09-05T15:33:44,164.00,Energo NV,BE89543378313985,no,app,booked,Voorschot energie
+T90017,C5010,2026-09-05T15:43:58,29.83,Kringwinkel Zuid,BE14943570001283,no,app,booked,Aankoop
+T90018,C5001,2026-09-05T18:34:37,159.41,Wijnhandel Verhaeghe,BE47302697926780,no,app,booked,Factuur
+T90019,C5008,2026-09-05T18:59:44,12.00,Ziekenfonds Lokaal,BE14005217948783,no,app,booked,Aanvullende verzekering
+T90020,C5005,2026-09-05T20:49:59,235.66,Fietsen Van Hove,BE28707708810720,no,app,booked,Onderhoud fiets
+T90021,C5001,2026-09-06T10:37:28,74.90,Webshop Kookgerei BV,BE78289695930986,yes,app,booked,Bestelling 88213
+T90022,C5010,2026-09-06T11:19:41,25.00,Telenetix BV,BE63603347013908,no,app,booked,Gsm
+T90023,C5009,2026-09-06T20:44:36,51.00,Aqualis Eau SA,BE38458626939172,no,app,booked,Acompte eau
+T90024,C5007,2026-09-07T21:11:30,53.78,Sterling Books,BE13353492826239,no,app,booked,Books
+T90025,C5007,2026-09-07T21:34:20,90.00,Yoga Loft Brussels,BE42035989983354,no,app,booked,10-class card
+T90026,C5002,2026-09-08T08:49:58,20.00,Paroisse Saint-Loup,BE60899803774570,no,web,booked,Don
+T90027,C5001,2026-09-08T10:03:56,45.00,Sportclub KAA Gentbrugge vzw,BE95586756517258,no,app,booked,Lidgeld jeugd
+T90028,C5008,2026-09-08T11:33:22,31.25,Bloemen Anja,BE15535484002230,no,app,booked,Bloemen
+T90029,C5008,2026-09-08T12:41:05,132.00,Energo NV,BE89543378313985,no,app,booked,Voorschot energie
+T90030,C5007,2026-09-08T13:16:53,12.46,Sterling Books,BE13353492826239,no,app,booked,Books
+T90031,C5005,2026-09-09T09:47:52,980.00,Immo Scheldezicht BV,BE66168560396343,no,app,booked,Huur
+T90032,C5004,2026-09-10T09:58:42,121.00,Energo NV,BE89543378313985,no,app,booked,Voorschot energie
+T90033,C5008,2026-09-10T14:15:40,450.00,Reisbureau De Wereld,BE37441873385728,no,app,booked,Voorschot reis
+T90034,C5006,2026-09-10T17:32:56,39.00,Salle de sport Move SRL,BE79651439567933,no,app,booked,Abonnement
+T90035,C5001,2026-09-10T19:22:12,93.06,Tandartspraktijk Lievens,BE56054682973188,no,app,booked,Consultatie
+T90036,C5007,2026-09-10T19:59:43,1040.00,Etterbeek Flats SRL,BE41154014884110,no,app,booked,Rent September
+T90037,C5005,2026-09-10T20:41:45,56.28,Fietsen Van Hove,BE28707708810720,no,app,booked,Onderhoud fiets
+T90038,C5005,2026-09-11T08:35:01,149.44,Fietsen Van Hove,BE28707708810720,no,app,booked,Onderhoud fiets
+T90039,C5003,2026-09-11T09:07:35,209.18,Tuincentrum Hoebeke,BE10104517219104,no,app,booked,Aankoop
+T90040,C5001,2026-09-11T10:55:45,138.00,Energo NV,BE89543378313985,no,web,booked,Voorschot energie
+T90041,C5006,2026-09-11T11:53:09,59.00,Telenetix BV,BE63603347013908,no,app,booked,Internet
+T90042,C5001,2026-09-11T15:19:41,1150.00,Immo De Linde BV,BE95269341971958,no,app,booked,Huur september
+T90043,C5003,2026-09-11T15:32:11,275.35,Bouwmaterialen Claessens NV,BE76376977802595,no,app,booked,Factuur
+T90044,C5005,2026-09-11T18:42:26,79.00,Telenetix BV,BE63603347013908,no,web,booked,Internet en gsm
+T90045,C5003,2026-09-12T19:37:45,130.54,Bouwmaterialen Claessens NV,BE76376977802595,no,app,booked,Factuur
+T90046,C5006,2026-09-13T19:23:03,74.24,Boucherie Ben Saïd,BE05821917731775,no,app,booked,Commande
+T90047,C5002,2026-09-15T13:34:01,63.32,Pharmacie du Parc,BE02642408141140,no,web,booked,Pharmacie
+T90048,C5006,2026-09-16T20:28:55,30.00,Assoc. Parents École 12,BE95993323607358,yes,app,booked,Fête de l'école
+T90049,C5004,2026-09-17T10:05:03,200.00,Tom Claes,BE05965210884775,no,app,booked,Voorschot verhuis
+T90050,C5008,2026-09-17T13:08:56,34.07,Bloemen Anja,BE15535484002230,no,app,booked,Bloemen
+T90051,C5006,2026-09-17T17:35:55,35.19,Boucherie Ben Saïd,BE05821917731775,no,app,booked,Commande
+T90052,C5005,2026-09-17T19:19:24,61.15,Fietsen Van Hove,BE28707708810720,no,app,booked,Onderhoud fiets
+T90053,C5007,2026-09-17T21:53:10,66.53,Sterling Books,BE13353492826239,no,app,booked,Books
+T90054,C5010,2026-09-18T10:58:00,19.47,Kringwinkel Zuid,BE14943570001283,no,app,booked,Aankoop
+T90055,C5003,2026-09-18T16:21:12,90.95,Tuincentrum Hoebeke,BE10104517219104,no,app,booked,Aankoop
+T90056,C5003,2026-09-18T20:40:33,86.39,Tuincentrum Hoebeke,BE10104517219104,no,app,booked,Aankoop
+T90057,C5001,2026-09-18T20:56:28,82.11,Tandartspraktijk Lievens,BE56054682973188,no,app,booked,Consultatie
+T90058,C5005,2026-09-18T21:37:58,156.95,Fietsen Van Hove,BE28707708810720,no,app,booked,Onderhoud fiets
+T90059,C5003,2026-09-19T10:31:07,1850.00,Schrijnwerkerij Goossens,BE06044469739522,yes,app,booked,Voorschot keukenkasten
+T90060,C5006,2026-09-19T13:20:20,79.58,Boucherie Ben Saïd,BE05821917731775,no,web,booked,Commande
+T90061,C5002,2026-09-19T18:15:15,58.07,Pharmacie du Parc,BE02642408141140,no,web,booked,Pharmacie
+T90062,C5009,2026-09-20T17:56:00,420.00,Syndic Meuse Gestion SRL,BE03630381164084,no,app,booked,Appel de fonds T4
+T90063,C5004,2026-09-21T12:49:54,27.94,Apotheek Sint-Jan,BE10336242730704,no,app,booked,Apotheek
+T90064,C5009,2026-09-21T20:53:30,47.78,Librairie Pax,BE11092387683948,no,app,booked,Livres
+T90065,C5006,2026-09-22T08:32:19,69.27,Boucherie Ben Saïd,BE05821917731775,no,app,booked,Commande
+T90066,C5004,2026-09-23T08:33:59,22.34,Apotheek Sint-Jan,BE10336242730704,no,app,booked,Apotheek
+T90067,C5009,2026-09-23T15:38:56,26.69,Librairie Pax,BE11092387683948,no,app,booked,Livres
+T90068,C5009,2026-09-24T21:00:45,34.71,Librairie Pax,BE11092387683948,no,app,booked,Livres
+T90069,C5004,2026-09-25T14:52:39,29.01,Apotheek Sint-Jan,BE10336242730704,no,app,booked,Apotheek
+T90070,C5007,2026-09-26T10:44:21,46.50,Chloé Renard,BE84203176215659,yes,app,booked,Dinner Friday
+T90071,C5004,2026-09-26T14:47:01,43.96,Kapsalon Mieke,BE24793576229238,no,app,booked,Kapper
+T90072,C5008,2026-09-27T10:41:30,3400.00,Kevin Bakker,BE22191775882047,yes,app,pending_review,Terugbetaling
+T90073,C5008,2026-09-27T13:48:01,51.45,Bloemen Anja,BE15535484002230,no,app,booked,Bloemen
+T90074,C5006,2026-09-27T18:03:44,685.00,Plomberie Dewolf,BE96698797361005,yes,app,pending_review,Facture 2026-118
+T90075,C5002,2026-09-27T23:40:12,4800.00,Marie-Thérèse Lambert,BE65180912090696,yes,web,pending_review,Sécurisation compte
+T90076,C5010,2026-09-28T08:57:02,1050.00,Immo Verbeke BV,BE11547497958448,yes,app,pending_review,Eerste huur + kosten okt
+T90077,C5004,2026-09-28T09:22:51,950.00,Tom Claes,LT143467500347971592,yes,app,pending_review,Factuur
+T90078,C5005,2026-09-28T10:15:08,12500.00,Garage Vermeulen BV,BE13180007909139,yes,app,pending_review,Bestelbon 2026-0412 VW Polo

@@ -59,6 +59,14 @@ something that does not exist yet, build the smallest version of it.
 - Keep `PLAN.md` (from `/kickoff`) and `DEMO_SCRIPT.md` (from
   `/demo-hardening`) current. The presenter and the agents both read them.
 
+## Practice drills
+`practice/` holds five fictional mock challenges for rehearsing before the
+event (see `practice/README.md`). They are not the real brief: ignore them on
+the day unless someone asks for a drill. Never read a `practice/*/ORGANIZER.md`
+file unless the user says they are the organizer or asks for the debrief or the
+jury questions; it holds the planted answers. Drill code lives on a
+`drill/NN` branch and never merges into `main`.
+
 ## Skills workflow
 Brief → `/brainstorm` (interactive, the whole team) → `/kickoff` → `/scaffold` → build with `/demo-step`, `/challenge-data`,
 `/rag-grounding`, `/prompt-eval`, `/be-domain`, `/impact-calc` → T−60
