@@ -1,0 +1,10 @@
+.env
+*.db
+*.db-journal
+node_modules/
+dist/
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+.vite/
