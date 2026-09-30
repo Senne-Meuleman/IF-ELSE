@@ -9,7 +9,7 @@ import type {
 import { NAV_ICONS } from "./components/icons";
 import { resolve } from "./components/registry";
 import type { SectionCtx } from "./components/types";
-import { longDate, PERSONA_LABEL, pct } from "./format";
+import { FEED_PERSONA_LABEL, longDate, PERSONA_LABEL, pct } from "./format";
 import { PrivacyContext } from "./privacy";
 import { greeting, themeVars } from "./theme";
 import GallerySheet from "./ui/GallerySheet";
@@ -115,7 +115,9 @@ export default function Phone(p: Props) {
   }, [chat]);
 
   const ctx: SectionCtx = { home, asOf, explain, onFeedback: p.onFeedback, onCta: p.onCta, openKate };
-  const mix = home.persona_mix.map((w) => `${pct(w.weight)} ${PERSONA_LABEL[w.persona] ?? w.persona}`).join(" · ");
+  const mix = home.feed_personas?.length
+    ? home.feed_personas.map((w) => `${pct(w.weight)} ${FEED_PERSONA_LABEL[w.code] ?? w.code}`).join(" · ")
+    : home.persona_mix.map((w) => `${pct(w.weight)} ${PERSONA_LABEL[w.persona] ?? w.persona}`).join(" · ");
   const themeExplain = home.layout.explanations["theme"];
   const initials = home.customer.first_name.slice(0, 1).toUpperCase();
   const order = movable(home.layout.sections);

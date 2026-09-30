@@ -11,13 +11,14 @@ interface Props {
   onFeedback: (card: CardT, decision: Decision) => void;
   onCta: (action: string) => void;
   onAskKate: (cardKey: string) => void;
+  onOpen: () => void;
 }
 
 interface ComparisonRow { item: string; current: string; kbc: string }
 
 const STAGE_LABEL: Record<string, string> = { early: "upcoming", soon: "soon", urgent: "urgent", info: "" };
 
-export default function Card({ card, asOf, onFeedback, onCta, onAskKate }: Props) {
+export default function Card({ card, asOf, onFeedback, onCta, onAskKate, onOpen }: Props) {
   const eur = useEur();
   const masked = useMasked();
   const [menu, setMenu] = useState(false);
@@ -43,7 +44,7 @@ export default function Card({ card, asOf, onFeedback, onCta, onAskKate }: Props
     <div style={{ position: "relative" }} ref={ref} data-card-key={card.card_key}>
       <motion.div className="swipe-hint" style={{ opacity: hintOpacity }}>Dismiss ✕</motion.div>
       <motion.div
-        className={`fcard stage-${card.stage}`}
+        className={`fcard stage-${card.stage} ${card.card_type === "core_money" ? "core-money" : ""}`}
         style={{ x }}
         drag="x"
         dragConstraints={{ left: 0, right: 0 }}
@@ -60,6 +61,18 @@ export default function Card({ card, asOf, onFeedback, onCta, onAskKate }: Props
         </div>
         <h3>{maskText(card.title, masked)}</h3>
         <p>{maskText(card.body, masked)}</p>
+        {Array.isArray(card.details?.metrics) && card.details.metrics.length > 1 && card.card_type === "core_money" && (
+          <div className="core-breakdown" aria-label="Money by account type">
+            {(card.details.metrics as {label: string; value: number}[]).filter((row) => row.value > 0).map((row) =>
+              <span key={row.label} title={`${row.label}: ${eur(row.value)}`} style={{ flex: row.value }} />)}
+          </div>
+        )}
+        {Array.isArray(card.details?.metrics) && card.card_type.startsWith("core_") && card.card_type !== "core_money" && (
+          <div className="core-preview">
+            {(card.details.metrics as {label: string; value: number}[]).slice(0, 3).map((row, i) =>
+              <div key={`${row.label}-${i}`}><span>{row.label}</span><b>{card.details.metric_unit === "%" ? `${row.value}%` : eur(row.value)}</b></div>)}
+          </div>
+        )}
         <div className="bottom">
           {card.eur_impact > 0 && <span className="impact">{eur(card.eur_impact)}{impactYearly ? "/yr" : ""}</span>}
           {card.due_date && (
@@ -68,6 +81,7 @@ export default function Card({ card, asOf, onFeedback, onCta, onAskKate }: Props
             </span>
           )}
           {card.commercial && <span className="commercial">offer</span>}
+          <button type="button" className="card-open" onClick={onOpen}>View details</button>
           <button type="button" className="ask-kate" title="Ask Kate about this" onClick={() => onAskKate(card.card_key)}>
             <span className="kate-dot" aria-hidden="true">K</span>Ask Kate
           </button>
@@ -80,8 +94,8 @@ export default function Card({ card, asOf, onFeedback, onCta, onAskKate }: Props
           <div className="menu">
             <button type="button" onClick={() => act("accept")}>✓ Done / accept</button>
             <button type="button" onClick={() => act("snooze")}>⏰ Snooze 7 days</button>
-            <button type="button" onClick={() => act("less")}>👎 Less like this</button>
-            <button type="button" className="danger" onClick={() => act("dismiss")}>✕ Dismiss</button>
+            <button type="button" onClick={() => act("less")}>Show me less of this</button>
+            <button type="button" className="danger" onClick={() => act("dismiss")}>Not relevant to me</button>
           </div>
         )}
 

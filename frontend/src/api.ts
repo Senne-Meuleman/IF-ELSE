@@ -3,10 +3,7 @@
 export type Persona = "student" | "young_professional" | "young_family" | "freelancer" | "retiree";
 export type Family = "deadline" | "anomaly" | "forecast" | "opportunity" | "milestone" | "protection";
 export type Stage = "early" | "soon" | "urgent" | "info";
-export type CardType =
-  | "insurance_renewal" | "vat_reserve" | "price_increase" | "duplicate_charge"
-  | "runway" | "cashflow_squeeze" | "idle_cash" | "life_event" | "scam_awareness"
-  | "pension_savings" | "late_client" | "protection_gap" | "new_payee";
+export type CardType = string; // backend validates against the legacy, core and catalogue registries
 export type Decision = "dismiss" | "snooze" | "less" | "accept" | "reset";
 export type LayoutPrefState = "pinned" | "hidden" | "reset";
 export type Component =
@@ -23,6 +20,7 @@ export type Accent = "blue" | "teal" | "purple" | "amber" | "navy";
 export type DeclaredSignal = "expecting_baby" | "going_freelance" | "retiring" | "studying";
 
 export interface PersonaWeight { persona: Persona; weight: number; evidence: string[] }
+export interface FeedPersona { code: "TEEN" | "STU" | "YPRO" | "PAR" | "HOME" | "SELF" | "INV" | "PRE" | "SEN"; weight: number; evidence: string[] }
 export interface Cta { label: string; action: string }
 export interface Card {
   card_key: string;
@@ -81,6 +79,7 @@ export interface HomeResponse {
   as_of: string;
   customer: CustomerPublic;
   persona_mix: PersonaWeight[];
+  feed_personas: FeedPersona[];
   layout: Layout;
   feed: Feed;
   generated_at: string;

@@ -7,9 +7,9 @@ the home screen you see: the system composed it from signals in the customer's o
 
 - **Adaptive layout** (who you are): a persona mix (student, young professional, young family, freelancer, retiree)
   decides which modules appear, which is the hero, density, contrast and tone.
-- **For You feed** (what is happening now): time-bound cards (insurance renewal, VAT reserve, price increase,
-  duplicate charge, runway, idle cash, life events, scam awareness) ranked by value to the customer, with a
-  lifecycle (early → soon → urgent → expired) and a feed that **ends**.
+- **For You feed** (what is happening now): nine soft personas and the supplied ten core cards plus 100 targeted
+  catalogue definitions, ranked from Customer State observations, urgency, consent and feedback. Cards whose
+  required data is unavailable are held back. The feed **ends**.
 - **Explainable and controllable**: "Why am I seeing this?" on every card and every section; dismiss, snooze,
   less like this, pin, hide, consent switch.
 - **Time travel**: the same customer, recomputed "as of" any date over 8 years. Watch the layout morph.
@@ -61,9 +61,9 @@ Regular synthetic customers: `c1` … `c1000`.
 ## How it works
 
 ```
-transactions ─► features ─► persona mix ─┬─► layout planner ─► layout spec (JSON) ─┐
-                    │                    │                                         ├─► phone renderer
-                    └─► card generators ─┴─► ranker (+ feedback, constraints) ─► feed ┘
+transactions ─► features ─► existing persona mix ─► layout planner ─► layout spec ─┐
+       └──────► Customer State ─► nine personas + catalogue recommender ─► feed ───┤
+                                                                  feedback ─────────┘► phone renderer
 ```
 
 | Module | What it does |
@@ -74,13 +74,25 @@ transactions ─► features ─► persona mix ─┬─► layout planner ─�
 | `backend/app/engine/cards.py` | 13 card generators, each with evidence, impact, lifecycle stage |
 | `backend/app/engine/ranker.py` | `persona_fit × (urgency, impact, confidence, novelty) × fatigue`, then hard constraints |
 | `backend/app/engine/layout.py` | component registry + deterministic planner → validated layout spec; pins, style overrides, tile gallery, suggestions |
+| `backend/app/customer_state/` | normalized banking observations, metrics, changes, uncertainty and cached snapshots |
+| `backend/app/recommender/` | nine persona scores, ten core card generators, 100 imported targeted card definitions, eligibility and feed ranking |
 | `backend/app/engine/kate.py` | Kate: grounded intent rules → reply + proposed actions; optional Gemini rephrasing with number validation |
 | `backend/app/main.py` | FastAPI: session auth, `/api/me/*` from session only, feedback, prefs, consent, advisor overview |
 | `frontend/` | React + Vite + Framer Motion: control panel, phone frame, registry renderer, animated morphs |
 
-Tests: `cd backend && py -3.12 -m pytest` (118 tests: synth, features, persona, cards, ranker, layout, pipeline, Kate, API incl. IDOR).
+Tests: `cd backend && py -3.12 -m pytest` (including recommender, Customer State, feedback and API isolation).
 
 Offline evaluation against the injected ground truth: `cd backend && py -3.12 -m scripts.evaluate`
+
+Customer State: see [docs/CUSTOMER-STATE.md](docs/CUSTOMER-STATE.md) for its data model, calculations,
+synthetic scenarios, persistence and `/api/me/customer-state` endpoints. The home feed now consumes its snapshots;
+the existing layout planner and Kate still use the earlier feature pipeline.
+
+The three supplied specifications are preserved in [docs/feed-specs](docs/feed-specs). After changing the targeted
+card specification, run `python backend/scripts/import_feed_catalogue.py` to rebuild the checked-in JSON catalogue.
+The feed uses observed values rather than the example amounts written in the specifications. Tapping a feed card
+opens its available breakdown, explanation and related cards. Goals and emergency-buffer cards include an adjustable
+savings estimate. Feedback persists and immediately re-ranks the feed.
 
 | Metric (1,000 synthetic customers, seed 42) | Value |
 |---|---|
@@ -112,14 +124,12 @@ open is a cache read. The advisor overview times scoring the whole synthetic por
 
 ## Demo script (< 3 min)
 
-1. Log in as `lotte`, turn on **Explain mode**, drag the time slider from 2018 to 2026: runway hero as a student
-   (with a Spotify price bump and a duplicate Alma charge), "First salary!" milestone, "New home, new bills",
-   family budget with Groeipakket, first invoice → VAT reserve, and finally the tax-reserve hero as a freelancer.
-2. Switch to `sara`: a 59 % freelancer / 41 % young family blend nobody designed. Open the car-insurance card,
-   tap ⓘ for the evidence and the honest comparison. Move the slider to 10 Oct: the card turns urgent.
+1. Log in as `lotte`, turn on **Explain mode**, drag the time slider from 2018 to 2026: the layout changes with
+   her life, while the feed changes its core values, persona mix and eligible targeted cards.
+2. Switch to `sara`: the feed combines parent, household and self-employed signals. Open a core card for its
+   observed breakdown and related cards; see the business and family recommendations beneath the core cards.
 3. Swipe a card away or choose "less like this": the feed re-ranks. Scroll to "✓ You're all caught up".
-4. Switch to `jan`: large text, high contrast, pension hero, scam shield, and an urgent "First payment of €1.250 to
-   Tech Support Services BV. Was this you?" Tap **Ask Kate** → "That wasn't me" → she gives the Card Stop number.
+4. Switch to `jan`: large text, high contrast, pension hero and a simpler feed with bill calendar and safety guidance.
 5. **Make it yours**: as `lotte`, tap Edit, pin a tile, then drag the slider: the pinned tile stays while the rest
    morphs. At Jan 2026 a banner suggests "You've started invoicing clients. Add Tax reserve?". Open settings and
    pick dark mode or large text; Explain mode now says "You chose …".
@@ -136,4 +146,8 @@ open is a cache read. The advisor overview times scoring the whole synthetic por
   `pip install google-genai` and credentials) is implemented but untested against the live API; Kate runs on
   deterministic rules by default.
 - Offers and prices in comparison cards are illustrative placeholders, not KBC products.
+- The catalogue retains all 100 concepts. Cards that need unavailable inputs (live rates, verified holdings,
+  confirmed travel or life events, account goals, card controls or external offers) are withheld. Apart from the
+  savings estimate, bespoke calculators, booking and money-movement workflows described in the catalogue remain
+  unavailable.
 - English only. Synthetic data only.

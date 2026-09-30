@@ -10,7 +10,7 @@ from __future__ import annotations
 import datetime as dt
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 # ----------------------------------------------------------------------------------
 # Vocabularies
@@ -34,12 +34,25 @@ INCOME_CATEGORIES = frozenset({
 
 Family = Literal["deadline", "anomaly", "forecast", "opportunity", "milestone", "protection"]
 Stage = Literal["early", "soon", "urgent", "info"]
-CardType = Literal[
+LegacyCardType = Literal[
     "insurance_renewal", "vat_reserve", "price_increase", "duplicate_charge",
     "runway", "cashflow_squeeze", "idle_cash", "life_event", "scam_awareness",
     "pension_savings", "late_client", "protection_gap", "new_payee",
 ]
-CARD_TYPES: tuple[str, ...] = CardType.__args__  # type: ignore[attr-defined]
+LEGACY_CARD_TYPES: tuple[str, ...] = LegacyCardType.__args__  # type: ignore[attr-defined]
+CORE_CARD_TYPES: tuple[str, ...] = (
+    "core_money", "core_spending", "core_coming_up", "core_unusual", "core_insurance",
+    "core_goals", "core_investments", "core_debt", "core_cards", "core_health",
+)
+CATALOGUE_CARD_TYPES: tuple[str, ...] = tuple(
+    f"catalog_{group.lower()}_{number:02d}"
+    for group, count in (("YS", 10), ("EC", 10), ("FM", 10), ("HM", 10), ("TR", 10),
+                         ("SV", 10), ("BZ", 8), ("RT", 10), ("EL", 10), ("LE", 12))
+    for number in range(1, count + 1)
+)
+CARD_TYPES = LEGACY_CARD_TYPES  # the legacy ranker's affinity contract
+FEEDBACK_CARD_TYPES = CARD_TYPES + CORE_CARD_TYPES + CATALOGUE_CARD_TYPES
+CardType = str
 
 Decision = Literal["dismiss", "snooze", "less", "accept", "reset"]
 LayoutPrefState = Literal["pinned", "hidden", "reset"]
@@ -240,6 +253,13 @@ class Card(BaseModel):
     cta: Cta | None = None
     details: dict = Field(default_factory=dict)   # structured extras for the UI (e.g. comparison table rows)
 
+    @field_validator("card_type")
+    @classmethod
+    def known_card_type(cls, value: str) -> str:
+        if value not in FEEDBACK_CARD_TYPES:
+            raise ValueError("Unknown card type")
+        return value
+
 
 class Theme(BaseModel):
     density: Density
@@ -292,6 +312,12 @@ class Feed(BaseModel):
     hidden_count: int = 0
 
 
+class FeedPersona(BaseModel):
+    code: Literal["TEEN", "STU", "YPRO", "PAR", "HOME", "SELF", "INV", "PRE", "SEN"]
+    weight: float = Field(ge=0, le=1)
+    evidence: list[str] = Field(default_factory=list)
+
+
 class CustomerPublic(BaseModel):
     first_name: str
     language: Literal["nl", "fr"]
@@ -302,6 +328,7 @@ class HomeResponse(BaseModel):
     as_of: dt.date
     customer: CustomerPublic
     persona_mix: list[PersonaWeight]
+    feed_personas: list[FeedPersona] = Field(default_factory=list)
     layout: Layout
     feed: Feed
     generated_at: dt.datetime
@@ -342,6 +369,13 @@ class FeedbackRequest(BaseModel):
     card_key: str = Field(pattern=CARD_KEY_PATTERN)
     card_type: CardType
     decision: Decision
+
+    @field_validator("card_type")
+    @classmethod
+    def known_card_type(cls, value: str) -> str:
+        if value not in FEEDBACK_CARD_TYPES:
+            raise ValueError("Unknown card type")
+        return value
 
 
 class LayoutPrefRequest(BaseModel):
