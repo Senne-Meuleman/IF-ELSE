@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import datetime as dt
 from collections import defaultdict
+from dataclasses import dataclass, field
 from statistics import median
 from typing import Callable
 
@@ -18,16 +19,20 @@ from ..schemas import (
     Card,
     Customer,
     Features,
+    GalleryItem,
     HERO_COMPONENTS,
     Layout,
+    LayoutPrefRow,
     Persona,
     PersonaWeight,
     Prefs,
     Section,
+    StylePrefs,
     Theme,
+    TileSuggestion,
     Transaction,
 )
-from app.engine.features import fmt_eur
+from app.engine.features import fmt_date, fmt_eur
 
 # ----------------------------------------------------------------------------------
 # Tuning knobs
@@ -90,12 +95,60 @@ AFFINITY: dict[str, dict[str, float]] = {
     "ScamShield":         {"student": 0.1, "young_professional": 0.1, "young_family": 0.1, "freelancer": 0.1, "retiree": 0.8},
     "AdvisorContact":     {"student": 0.2, "young_professional": 0.2, "young_family": 0.3, "freelancer": 0.3, "retiree": 0.7},
     "SpendingByCategory": {"student": 0.5, "young_professional": 0.8, "young_family": 0.5, "freelancer": 0.4, "retiree": 0.3},
+    "KateTile":           {"student": 0.5, "young_professional": 0.45, "young_family": 0.5, "freelancer": 0.45, "retiree": 0.5},
+    "SubscriptionsTile":  {"student": 0.6, "young_professional": 0.6, "young_family": 0.4, "freelancer": 0.3, "retiree": 0.3},
 }
 
 SIZE: dict[str, str] = {c: "hero" for c in HERO_COMPONENTS}
-SIZE.update({"ForYouFeed": "full", "QuickActions": "full"})
+SIZE.update({"ForYouFeed": "full", "QuickActions": "full", "KateTile": "full"})
 for _c in AFFINITY:
     SIZE.setdefault(_c, "half")
+
+BOOST_KATE_ACTIVE_CARD = 0.2      # Kate has something to talk about (a soon/urgent card)
+BOOST_SUBSCRIPTIONS = 0.25        # 3+ subscriptions, or one just got more expensive
+SUBSCRIPTIONS_MIN = 3
+SUGGESTION_LOOKBACK_DAYS = 120    # a life event this recent can trigger a "add this tile?" suggestion
+SUGGESTION_SNOOZE_DAYS = 90       # "Not now" hides a suggestion this long
+HERO_SWITCH_MARGIN = 0.25         # a pinned hero is challenged only when another hero scores this much higher
+MAX_SUGGESTIONS = 2
+
+# Customer-facing names for the tile gallery and suggestions
+TILE_LABEL: dict[str, tuple[str, str]] = {
+    "BalanceHero": ("Balance", "Your balance with a 30-day trend"),
+    "RunwayHero": ("Runway", "How far your money stretches until the next income"),
+    "FamilyBudgetHero": ("Family budget", "This month's family income and spending"),
+    "TaxReserveHero": ("Tax reserve", "VAT and social contributions to set aside"),
+    "PensionHero": ("Pension overview", "Pension received and bills ahead"),
+    "ForYouFeed": ("For you", "The few things worth your attention"),
+    "QuickActions": ("Quick actions", "Shortcuts that fit how you bank"),
+    "UpcomingBills": ("Upcoming bills", "Recurring payments in the next 14 days"),
+    "SplitBills": ("Split bills", "Share costs with friends or roommates"),
+    "InvoiceTracker": ("Invoices", "Client payments and income smoothing"),
+    "SavingsGoal": ("Savings goal", "Progress towards what you're saving for"),
+    "ScamShield": ("Scam shield", "Safety tips and a direct line to your bank"),
+    "AdvisorContact": ("Your advisor", "A real person, one tap away"),
+    "SpendingByCategory": ("Spending", "Where your money went this month"),
+    "KateTile": ("Ask Kate", "Your assistant, ready with what matters now"),
+    "SubscriptionsTile": ("Subscriptions", "Everything you pay for every month"),
+}
+
+# Kate's starter questions per card type (also used by engine/kate.py)
+KATE_QUICK_REPLIES: dict[str, list[str]] = {
+    "insurance_renewal": ["What's the difference in coverage?", "Remind me next week"],
+    "vat_reserve": ["How did you calculate this?", "What if I don't set it aside?"],
+    "price_increase": ["What else did I subscribe to?", "How much is that per year?"],
+    "duplicate_charge": ["What should I do?", "Was I charged twice before?"],
+    "runway": ["How can I stretch my money?", "When is my next income?"],
+    "cashflow_squeeze": ["Where did my money go?", "How can I stretch my money?"],
+    "idle_cash": ["What are my options?", "Why does this matter?"],
+    "life_event": ["What should I sort out now?", "Why does my app look like this?"],
+    "scam_awareness": ["How do I recognise a scam?", "Call my bank"],
+    "pension_savings": ["How does the tax benefit work?", "Is this right for me?"],
+    "late_client": ["How late are they usually?", "What should I do?"],
+    "protection_gap": ["What does family insurance cover?", "Why am I seeing this?"],
+    "new_payee": ["That wasn't me", "Why am I seeing this?"],
+}
+KATE_GENERAL_REPLIES = ["How am I doing this month?", "Why does my app look like this?"]
 
 PERSONA_LABEL = {
     "student": "a student",
@@ -416,6 +469,34 @@ def _props_advisor_contact(c: Ctx) -> dict:
     return {"advisor_name": ADVISOR_NAME, "reason": reason, "slots": list(ADVISOR_SLOTS)}
 
 
+def _props_kate_tile(c: Ctx) -> dict:
+    cards: list[Card] = c["cards"]
+    top = cards[0] if cards else None
+    if top is None:
+        return {"prompt": "Nothing needs your attention. Ask me anything about your money.",
+                "card_key": None, "quick_replies": list(KATE_GENERAL_REPLIES)}
+    return {
+        "prompt": f"Shall we look at this together? “{top.title}”",
+        "card_key": top.card_key,
+        "quick_replies": list(KATE_QUICK_REPLIES.get(top.card_type, KATE_GENERAL_REPLIES))[:2],
+    }
+
+
+def _subscriptions(f: Features) -> list:
+    return [r for r in f.recurring_payments if r.category == "subscription"]
+
+
+def _props_subscriptions(c: Ctx) -> dict:
+    subs = sorted(_subscriptions(c["features"]), key=lambda r: r.amount_eur * 30 / max(1, r.period_days), reverse=True)
+    return {
+        "monthly_total_eur": _r(sum(r.amount_eur * 30 / max(1, r.period_days) for r in subs)),
+        "count": len(subs),
+        "items": [{"counterparty": r.counterparty[:40], "amount_eur": _r(r.amount_eur), "period_days": r.period_days,
+                   "previous_amount_eur": _r(r.previous_amount_eur) if r.previous_amount_eur is not None else None}
+                  for r in subs[:6]],
+    }
+
+
 def _props_spending(c: Ctx) -> dict:
     f: Features = c["features"]
     top = sorted(f.spend_by_category_30d.items(), key=lambda kv: kv[1], reverse=True)[:6]
@@ -447,6 +528,8 @@ REGISTRY: dict[str, dict] = {
         "ScamShield": _props_scam_shield,
         "AdvisorContact": _props_advisor_contact,
         "SpendingByCategory": _props_spending,
+        "KateTile": _props_kate_tile,
+        "SubscriptionsTile": _props_subscriptions,
     }.items()
 }
 
@@ -486,6 +569,16 @@ def score_components(features: Features, persona_mix: list[PersonaWeight], cards
     if features.has_savings_product:
         scores["SavingsGoal"] += BOOST_SAVINGS_PRODUCT
         reasons.setdefault("SavingsGoal", "you transfer to a savings account regularly.")
+    active = next((c for c in cards if c.stage in ("soon", "urgent")), None)
+    if active is not None:
+        scores["KateTile"] += BOOST_KATE_ACTIVE_CARD
+        reasons["KateTile"] = "something needs your attention, and Kate can walk you through it."
+    subs = _subscriptions(features)
+    raised = [r for r in subs if r.previous_amount_eur is not None and r.amount_eur > r.previous_amount_eur]
+    if len(subs) >= SUBSCRIPTIONS_MIN or raised:
+        scores["SubscriptionsTile"] += BOOST_SUBSCRIPTIONS
+        reasons["SubscriptionsTile"] = (f"{raised[0].counterparty[:40]} just got more expensive." if raised
+                                        else f"you pay for {len(subs)} subscriptions.")
     return scores, reasons
 
 
@@ -538,6 +631,14 @@ def _theme_explanation(theme: dict, features: Features, persona_mix: list[Person
 # Planner
 # ----------------------------------------------------------------------------------
 
+STYLE_LABEL = {
+    "density": {"compact": "compact text", "comfortable": "comfortable text", "large": "large text"},
+    "contrast": {"normal": "normal contrast", "high": "high contrast"},
+    "tone": {t: f"a {t} tone" for t in ("casual", "neutral", "warm", "business", "formal")},
+    "appearance": {"light": "light mode", "dark": "dark mode"},
+    "accent": {a: f"a {a} accent" for a in ("blue", "teal", "purple", "amber", "navy")},
+}
+
 
 def plan_theme(persona_mix: list[PersonaWeight]) -> dict:
     w = _weights(persona_mix)
@@ -546,6 +647,203 @@ def plan_theme(persona_mix: list[PersonaWeight]) -> dict:
         theme["density"] = "large"
         theme["contrast"] = "high"
     return theme
+
+
+def apply_style(theme: dict, style: StylePrefs) -> tuple[dict, list[str]]:
+    """Customer overrides win over the adaptive theme. Returns (theme, keys the customer set)."""
+    out = dict(theme, appearance="light", accent=None, reduce_motion=style.reduce_motion, privacy=style.privacy)
+    overrides: list[str] = []
+    for key in ("density", "contrast", "tone", "appearance", "accent"):
+        value = getattr(style, key)
+        if value is not None:
+            out[key] = value
+            overrides.append(key)
+    return out, overrides
+
+
+def _style_phrase(theme: dict, overrides: list[str]) -> str:
+    parts = [STYLE_LABEL[k][theme[k]] for k in overrides if theme.get(k) in STYLE_LABEL[k]]
+    return "You chose " + ", ".join(parts) + "." if parts else ""
+
+
+@dataclass
+class Plan:
+    layout: Layout
+    suggestions: list[TileSuggestion] = field(default_factory=list)
+    gallery: list[GalleryItem] = field(default_factory=list)
+
+
+def _place(rest_slots: int, pinned: list[LayoutPrefRow], candidates: list[str]) -> list[str]:
+    """Pinned tiles keep their slot; the adaptive tiles flow around them.
+    position None = the first free slot (a freshly added tile shows up right under the feed)."""
+    slots: list[str | None] = [None] * rest_slots
+    for p in [p for p in pinned if p.position is not None]:
+        free = [i for i in range(rest_slots) if slots[i] is None]
+        if not free:
+            break
+        want = min(p.position, rest_slots - 1)
+        slots[min(free, key=lambda i: (abs(i - want), i))] = p.component
+    for p in [p for p in pinned if p.position is None]:
+        free = [i for i in range(rest_slots) if slots[i] is None]
+        if not free:
+            break
+        slots[free[0]] = p.component
+    fill = iter(candidates)
+    for i in range(rest_slots):
+        if slots[i] is None:
+            slots[i] = next(fill, None)
+    return [s for s in slots if s is not None]
+
+
+DECLARED_TRIGGERS: dict[str, tuple[str, str, list[str]]] = {
+    "expecting_baby": ("You told Kate you're expecting",
+                       "Let's get ready together: a savings goal and a family view.",
+                       ["SavingsGoal", "FamilyBudgetHero"]),
+    "going_freelance": ("You told Kate you're going freelance",
+                        "Keep an eye on VAT and invoices from day one.",
+                        ["TaxReserveHero", "InvoiceTracker"]),
+    "retiring": ("You told Kate you're retiring",
+                 "A calm overview of your pension and bills.",
+                 ["PensionHero", "UpcomingBills"]),
+    "studying": ("You told Kate you're studying",
+                 "See how far your money stretches each month.",
+                 ["RunwayHero", "SplitBills"]),
+}
+
+
+def _recent_triggers(features: Features, prefs: Prefs, as_of: dt.date) -> list[tuple[dt.date, str, str, list[str]]]:
+    """(date, title, reason, components) for recent life events and things the customer told Kate."""
+    out: list[tuple[dt.date, str, str, list[str]]] = []
+    since = as_of - dt.timedelta(days=SUGGESTION_LOOKBACK_DAYS)
+    for e in features.life_events:
+        if not (since <= e.date <= as_of):
+            continue
+        when = fmt_date(e.date)
+        if e.type == "first_invoice":
+            out.append((e.date, "You've started invoicing clients",
+                        f"Your first client payment arrived on {when}. Keep VAT and social contributions in view.",
+                        ["TaxReserveHero", "InvoiceTracker"]))
+        elif e.type == "baby":
+            out.append((e.date, "Congratulations on your new arrival",
+                        f"We noticed baby-related spending since {when}. A family view helps with the new costs.",
+                        ["FamilyBudgetHero", "SavingsGoal", "UpcomingBills"]))
+        elif e.type in ("pension_start", "first_pension"):
+            out.append((e.date, "Your pension has started",
+                        f"Your first pension payment arrived on {when}. A calm overview of pension and bills.",
+                        ["PensionHero", "ScamShield"]))
+        elif e.type == "first_salary":
+            out.append((e.date, "Your first salary!",
+                        f"Your first salary arrived on {when}. A savings goal makes it easy to put some aside.",
+                        ["SavingsGoal", "SpendingByCategory"]))
+        elif e.type == "moved_house":
+            out.append((e.date, "New home, new bills",
+                        f"Your mortgage started on {when}. Keep upcoming bills in view.",
+                        ["UpcomingBills"]))
+    for d in prefs.declared:
+        if since <= d.created_at <= as_of:
+            title, reason, comps = DECLARED_TRIGGERS[d.signal]
+            out.append((d.created_at, title, reason, comps))
+    out.sort(key=lambda t: t[0], reverse=True)
+    return out
+
+
+def plan_suggestions(features: Features, prefs: Prefs, as_of: dt.date, scores: dict[str, float],
+                     reasons: dict[str, str], order: list[str], pinned_hero: str | None) -> list[TileSuggestion]:
+    """The system proposes, the customer decides: tiles that fit a recent change but aren't on the home screen."""
+    hidden = {p.component for p in prefs.layout_prefs if p.state == "hidden"}
+    snoozed = {d.component for d in prefs.dismissed_suggestions
+               if d.created_at <= as_of and (as_of - d.created_at).days < SUGGESTION_SNOOZE_DAYS}
+    hero = order[0]
+    out: list[TileSuggestion] = []
+
+    def open_slot(comp: str) -> bool:
+        if comp in hidden or comp in snoozed or any(s.component == comp for s in out):
+            return False
+        return comp != hero if comp in HERO_COMPONENTS else comp not in order
+
+    # 1. life changed (observed in transactions, or told to Kate)
+    for _, title, reason, comps in _recent_triggers(features, prefs, as_of):
+        comp = next((c for c in comps if open_slot(c)), None)
+        if comp:
+            out.append(TileSuggestion(component=comp, title=title, reason=reason, as_hero=comp in HERO_COMPONENTS))
+    # 2. the customer pinned a hero, but another one now fits much better
+    if pinned_hero:
+        best = max(HERO_COMPONENTS, key=lambda h: (scores[h], -HERO_COMPONENTS.index(h)))
+        if best != pinned_hero and scores[best] - scores[pinned_hero] >= HERO_SWITCH_MARGIN and open_slot(best):
+            why = reasons.get(best, "it fits your situation better now.")
+            out.append(TileSuggestion(component=best, title=f"Switch your main tile to {TILE_LABEL[best][0]}?",
+                                      reason=f"You pinned {TILE_LABEL[pinned_hero][0]}, but {why}", as_hero=True))
+    return out[:MAX_SUGGESTIONS]
+
+
+def plan_gallery(scores: dict[str, float], reasons: dict[str, str], order: list[str], hidden: set[str],
+                 ctx: Ctx) -> list[GalleryItem]:
+    items = []
+    for comp in sorted(REGISTRY, key=lambda c: (-scores[c], c)):
+        if comp == "ForYouFeed":
+            continue
+        state = "shown" if comp in order else "hidden" if comp in hidden else "available"
+        label, desc = TILE_LABEL[comp]
+        items.append(GalleryItem(component=comp, label=label, description=desc,
+                                 reason=_explain(comp, ctx, reasons, False), score=round(scores[comp], 3),
+                                 state=state, is_hero=comp in HERO_COMPONENTS))
+    for item in [i for i in items if i.state == "available"][:3]:
+        item.suggested = True
+    return items
+
+
+def plan_home_layout(
+    features: Features,
+    persona_mix: list[PersonaWeight],
+    prefs: Prefs,
+    customer: Customer,
+    txs: list[Transaction],
+    as_of: dt.date,
+    cards: list[Card],
+) -> Plan:
+    if not persona_mix:
+        persona_mix = [PersonaWeight(persona="young_professional", weight=1.0, evidence=["Default profile"])]
+    w = _weights(persona_mix)
+    ctx: Ctx = {
+        "features": features, "persona_mix": persona_mix, "customer": customer,
+        "txs": txs, "as_of": as_of, "cards": cards, "weights": w,
+    }
+    scores, reasons = score_components(features, persona_mix, cards)
+    auto_theme = plan_theme(persona_mix)
+    theme, overrides = apply_style(auto_theme, prefs.style)
+
+    hidden = {p.component for p in prefs.layout_prefs if p.state == "hidden"}
+    pins = [p for p in prefs.layout_prefs if p.state == "pinned" and p.component in REGISTRY]
+    pinned_heroes = [p.component for p in pins if p.component in HERO_COMPONENTS]
+    pinned_hero = pinned_heroes[-1] if pinned_heroes else None
+    pinned_rest = [p for p in pins if p.component not in HERO_COMPONENTS and p.component != "ForYouFeed"
+                   and p.component not in hidden]
+    pinned_names = {p.component for p in pinned_rest}
+
+    # 1. hero: the customer's pinned one, else the best-scoring
+    hero = pinned_hero or max(HERO_COMPONENTS, key=lambda h: (scores[h], -HERO_COMPONENTS.index(h)))
+    # 2. feed right after; pinned tiles keep their slots and the best of the rest fills the gaps
+    budget = max(DENSITY_BUDGET[theme["density"]], 2 + len(pinned_rest))
+    candidates = [
+        c for c in sorted(REGISTRY, key=lambda c: (-scores[c], c))
+        if c not in HERO_COMPONENTS and c != "ForYouFeed" and c not in hidden and c not in pinned_names
+    ]
+    order = [hero, "ForYouFeed"] + _place(budget - 2, pinned_rest, candidates)
+    pinned_set = pinned_names | ({pinned_hero} if pinned_hero else set())
+
+    sections = [Section(component=c, size=REGISTRY[c]["size"], props=REGISTRY[c]["props"](ctx), pinned=c in pinned_set)
+                for c in order]
+    explanations = {c: _explain(c, ctx, reasons, c in pinned_set) for c in order}
+    auto_why = _theme_explanation(auto_theme, features, persona_mix, w)
+    chose = _style_phrase(theme, overrides)
+    explanations["theme"] = f"{chose} Otherwise: {auto_why}" if chose else auto_why
+
+    layout = Layout(version=1, theme=Theme(**theme, overrides=overrides), sections=sections, explanations=explanations)
+    return Plan(
+        layout=layout,
+        suggestions=plan_suggestions(features, prefs, as_of, scores, reasons, order, pinned_hero),
+        gallery=plan_gallery(scores, reasons, order, hidden, ctx),
+    )
 
 
 def plan_layout(
@@ -557,44 +855,4 @@ def plan_layout(
     as_of: dt.date,
     cards: list[Card],
 ) -> Layout:
-    if not persona_mix:
-        persona_mix = [PersonaWeight(persona="young_professional", weight=1.0, evidence=["Default profile"])]
-    w = _weights(persona_mix)
-    ctx: Ctx = {
-        "features": features, "persona_mix": persona_mix, "customer": customer,
-        "txs": txs, "as_of": as_of, "cards": cards, "weights": w,
-    }
-    scores, reasons = score_components(features, persona_mix, cards)
-    theme = plan_theme(persona_mix)
-    budget = DENSITY_BUDGET[theme["density"]]
-
-    hidden = {p.component for p in prefs.layout_prefs if p.state == "hidden"}
-    pinned = [p.component for p in prefs.layout_prefs if p.state == "pinned"]
-
-    # 1. hero
-    hero = max(HERO_COMPONENTS, key=lambda h: (scores[h], -HERO_COMPONENTS.index(h)))
-    order: list[str] = [hero, "ForYouFeed"]
-    pinned_set: set[str] = set()
-
-    # 2. pinned first (unless hero/feed or hidden)
-    for comp in pinned:
-        if comp in REGISTRY and comp not in order and comp not in hidden and comp not in HERO_COMPONENTS:
-            if len(order) < budget:
-                order.append(comp)
-                pinned_set.add(comp)
-
-    # 3. best of the rest
-    candidates = [
-        c for c in sorted(REGISTRY, key=lambda c: (-scores[c], c))
-        if c not in order and c not in hidden and c not in HERO_COMPONENTS
-    ]
-    for comp in candidates:
-        if len(order) >= budget:
-            break
-        order.append(comp)
-
-    sections = [Section(component=c, size=REGISTRY[c]["size"], props=REGISTRY[c]["props"](ctx)) for c in order]
-    explanations = {c: _explain(c, ctx, reasons, c in pinned_set) for c in order}
-    explanations["theme"] = _theme_explanation(theme, features, persona_mix, w)
-
-    return Layout(version=1, theme=Theme(**theme), sections=sections, explanations=explanations)
+    return plan_home_layout(features, persona_mix, prefs, customer, txs, as_of, cards).layout

@@ -153,3 +153,85 @@ def test_security_headers(client):
     r = client.post("/api/logout")
     assert "Content-Security-Policy" in r.headers
     assert r.headers["X-Frame-Options"] == "DENY"
+
+
+# ---- v2: customisation, suggestions, declared signals, Kate ------------------------
+
+
+def _as(client: TestClient, username: str) -> None:
+    client.cookies.clear()
+    assert _login(client, username).status_code == 200
+    client.post("/api/me/layout-reset")
+    client.post("/api/me/style", json={})
+
+
+def test_pin_at_position_survives_time_travel(client):
+    _as(client, "lotte")
+    h = client.post("/api/me/layout-prefs", json={"component": "ScamShield", "state": "pinned", "position": 1}).json()
+    comps = [s["component"] for s in h["layout"]["sections"]]
+    assert comps[3] == "ScamShield"
+    for day in ["2019-03-01", "2022-06-01", "2024-06-01"]:
+        comps = [s["component"] for s in client.get(f"/api/me/home?as_of={day}").json()["layout"]["sections"]]
+        assert comps[3] == "ScamShield", day
+    client.post("/api/me/layout-reset")
+
+
+def test_only_one_pinned_hero(client):
+    _as(client, "sara")
+    client.post("/api/me/layout-prefs", json={"component": "BalanceHero", "state": "pinned"})
+    h = client.post("/api/me/layout-prefs", json={"component": "PensionHero", "state": "pinned"}).json()
+    assert h["layout"]["sections"][0]["component"] == "PensionHero"
+    assert sum(s["pinned"] for s in h["layout"]["sections"] if s["size"] == "hero") == 1
+    client.post("/api/me/layout-reset")
+
+
+def test_style_roundtrip_and_validation(client):
+    _as(client, "jan")
+    h = client.post("/api/me/style", json={"density": "compact", "appearance": "dark", "accent": "teal"}).json()
+    assert h["layout"]["theme"]["density"] == "compact" and h["layout"]["theme"]["appearance"] == "dark"
+    assert h["style"]["accent"] == "teal"
+    assert client.post("/api/me/style", json={"accent": "#ff0000"}).status_code == 422
+    h = client.post("/api/me/style", json={}).json()
+    assert h["layout"]["theme"]["density"] == "large" and h["layout"]["theme"]["overrides"] == []
+
+
+def test_suggestion_accept_pins_and_dismiss_hides(client):
+    _as(client, "sara")
+    h = client.post("/api/me/suggestion", json={"component": "SplitBills", "decision": "accept"}).json()
+    assert any(s["component"] == "SplitBills" and s["pinned"] for s in h["layout"]["sections"])
+    client.post("/api/me/suggestion", json={"component": "ScamShield", "decision": "dismiss"})
+    assert client.post("/api/me/suggestion", json={"component": "Nope", "decision": "accept"}).status_code == 422
+    client.post("/api/me/layout-reset")
+
+
+def test_declared_signal_shifts_persona_and_can_be_cleared(client):
+    _as(client, "jan")
+    before = {p["persona"]: p["weight"] for p in client.get("/api/me/home").json()["persona_mix"]}
+    h = client.post("/api/me/declare", json={"signal": "going_freelance", "state": "set"}).json()
+    after = {p["persona"]: p["weight"] for p in h["persona_mix"]}
+    assert after.get("freelancer", 0) > before.get("freelancer", 0)
+    assert any("You told Kate" in e for p in h["persona_mix"] for e in p["evidence"])
+    h = client.post("/api/me/declare", json={"signal": "going_freelance", "state": "clear"}).json()
+    assert {p["persona"]: p["weight"] for p in h["persona_mix"]} == before
+
+
+def test_kate_opener_card_and_actions(client):
+    _as(client, "sara")
+    home = client.get("/api/me/home").json()
+    r = client.post("/api/me/kate", json={"message": ""}).json()
+    assert r["reply"].startswith("Hi Sara") or "Sara" in r["reply"]
+    card = home["feed"]["cards"][0]
+    r = client.post("/api/me/kate", json={"message": "Why am I seeing this?", "card_key": card["card_key"]}).json()
+    assert card["evidence"][0][:20] in r["reply"]
+    r = client.post("/api/me/kate", json={"message": "Can you make the text bigger?"}).json()
+    assert r["actions"][0]["kind"] == "set_style" and r["actions"][0]["style"]["density"] == "large"
+    # Kate only proposes: nothing changed
+    assert client.get("/api/me/home").json()["layout"]["theme"]["overrides"] == []
+
+
+def test_kate_validation_and_isolation(client):
+    _as(client, "sara")
+    assert client.post("/api/me/kate", json={"message": "x" * 501}).status_code == 422
+    assert client.post("/api/me/kate", json={"message": "hi", "card_key": "../etc"}).status_code == 422
+    client.cookies.clear()
+    assert client.post("/api/me/kate", json={"message": "hi"}).status_code == 401

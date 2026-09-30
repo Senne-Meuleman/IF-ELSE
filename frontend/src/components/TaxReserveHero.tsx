@@ -1,7 +1,9 @@
-import { eur, longDate } from "../format";
+import { longDate } from "../format";
+import { useEur } from "../privacy";
 import { num, str, type SectionProps } from "./types";
 
 export default function TaxReserveHero({ props }: SectionProps) {
+  const eur = useEur();
   const quarter = str(props.quarter_label, "This quarter");
   const income = num(props.quarter_income_eur);
   const reserve = num(props.reserve_eur);

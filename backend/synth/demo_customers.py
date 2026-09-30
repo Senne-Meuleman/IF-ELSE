@@ -142,6 +142,8 @@ def _sara() -> tuple[str, Customer, list[Transaction], float]:
                        (D(2026, 8, 4), 2100, "Immo Verstraete"), (D(2026, 8, 19), 940, "Bakkerij Peeters"),
                        (D(2026, 9, 3), 1820, "Sofico BV"), (D(2026, 9, 12), 1310, "Atelier Vos")]:
         b.add(d, amt, "invoice_income", cp)
+    # a steady retainer client (monthly, around the 24th) who stopped paying after June: the late-client card
+    b.monthly(D(2025, 1, 24), D(2026, 6, 30), 24, 650, "invoice_income", "Brouwerij Het Anker", jitter_amount=0.0)
 
     # house since mid-2019 (deposit from savings)
     b.monthly(DEMO_START, D(2019, 5, 31), 1, 780, "rent", "Immo De Smet")
@@ -179,6 +181,7 @@ def _sara() -> tuple[str, Customer, list[Transaction], float]:
                 {"type": "baby", "date": baby.isoformat()},
                 {"type": "insurance_renewal", "date": "2026-10-12", "counterparty": "AG Insurance", "amount": 612},
                 {"type": "price_increase", "date": "2026-09-14", "counterparty": "Netflix", "from": 13.99, "to": 17.99},
+                {"type": "late_client", "date": "2026-06-24", "counterparty": "Brouwerij Het Anker", "amount": 650},
             ],
         },
     )
@@ -205,11 +208,15 @@ def _jan() -> tuple[str, Customer, list[Transaction], float]:
     b.add(D(2026, 9, 27), 64.20, "groceries", "Colruyt")
     b.add(D(2026, 9, 27), 64.20, "groceries", "Colruyt")
 
-    # no savings product: the balance just sits on the current account (≈ €14,000 for years)
+    # first payment ever to an unknown payee ("was this you?"): a typical helpdesk-scam amount, two days before TODAY
+    b.add(D(2026, 9, 28), 1250, "other", "Tech Support Services BV")
+
+    # no savings product: the balance just sits on the current account (≈ €14,000 for years; the band is
+    # €1,200 higher than it would otherwise be so the idle-cash story survives the €1,250 new-payee payment)
     trips = [("leisure", "Neckermann Reizen"), ("leisure", "TUI"), ("other", "Cadeau kleinkinderen"),
              ("furniture", "Weba"), ("transport", "Garage Peeters")]
     until = TODAY - dt.timedelta(days=91)
-    balance_today = calibrate_balance(b, 13600.0, fixed_band(12200, 13800, 12800), excess=trips, until=until)
+    balance_today = calibrate_balance(b, 13600.0, fixed_band(13400, 15000, 14000), excess=trips, until=until)
     balance_today = round(balance_today + sum(t.amount for t in b.between(until + dt.timedelta(days=1), TODAY)), 2)
 
     customer = Customer(
@@ -220,6 +227,7 @@ def _jan() -> tuple[str, Customer, list[Transaction], float]:
             "events": [
                 {"type": "pension_start", "date": "2020-04-03"},
                 {"type": "duplicate_charge", "date": "2026-09-27", "counterparty": "Colruyt", "amount": 64.20},
+                {"type": "new_payee", "date": "2026-09-28", "counterparty": "Tech Support Services BV", "amount": 1250},
                 {"type": "idle_cash", "date": TODAY.isoformat(), "balance": balance_today},
             ],
         },

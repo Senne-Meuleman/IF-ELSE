@@ -1,7 +1,8 @@
-import { eur } from "../format";
+import { useEur } from "../privacy";
 import { num, str, type SectionProps } from "./types";
 
 export default function SavingsGoal({ props }: SectionProps) {
+  const eur = useEur();
   const label = str(props.goal_label, "Savings");
   const saved = num(props.saved_eur);
   const target = num(props.target_eur);

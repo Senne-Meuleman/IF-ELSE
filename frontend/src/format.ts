@@ -68,3 +68,11 @@ export const CATEGORY_LABEL: Record<string, string> = {
 export function categoryLabel(c: string): string {
   return CATEGORY_LABEL[c] ?? c.replace(/_/g, " ");
 }
+
+/** "SubscriptionsTile" → "Subscriptions tile"; prefers the backend's gallery label when known. */
+export function componentLabel(component: string, gallery?: { component: string; label: string }[]): string {
+  const g = gallery?.find((x) => x.component === component);
+  if (g) return g.label;
+  const words = component.replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+}

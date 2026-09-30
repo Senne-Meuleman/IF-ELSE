@@ -6,6 +6,8 @@ export interface SectionCtx {
   explain: boolean;
   onFeedback: (card: Card, decision: Decision) => void;
   onCta: (action: string) => void;
+  /** Open the Kate sheet, optionally about one card and/or with a first user message. */
+  openKate: (cardKey?: string | null, message?: string) => void;
 }
 
 export interface SectionProps {

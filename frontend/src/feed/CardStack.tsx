@@ -10,9 +10,10 @@ interface Props {
   asOf: string;
   onFeedback: (card: CardT, decision: Decision) => void;
   onCta: (action: string) => void;
+  onAskKate: (cardKey: string) => void;
 }
 
-export default function CardStack({ cards, caughtUp, hiddenCount, asOf, onFeedback, onCta }: Props) {
+export default function CardStack({ cards, caughtUp, hiddenCount, asOf, onFeedback, onCta, onAskKate }: Props) {
   return (
     <div className="feed">
       <div className="feed-head">
@@ -29,7 +30,7 @@ export default function CardStack({ cards, caughtUp, hiddenCount, asOf, onFeedba
             exit={{ opacity: 0, x: -80, scale: 0.96, transition: { duration: 0.22 } }}
             transition={{ type: "spring", stiffness: 380, damping: 32 }}
           >
-            <Card card={c} asOf={asOf} onFeedback={onFeedback} onCta={onCta} />
+            <Card card={c} asOf={asOf} onFeedback={onFeedback} onCta={onCta} onAskKate={onAskKate} />
           </motion.div>
         ))}
       </AnimatePresence>

@@ -1,7 +1,9 @@
-import { eur, shortDate } from "../format";
+import { shortDate } from "../format";
+import { useEur } from "../privacy";
 import { num, str, type SectionProps } from "./types";
 
 export default function RunwayHero({ props }: SectionProps) {
+  const eur = useEur();
   const balance = num(props.balance_eur);
   const runway = typeof props.runway_days === "number" ? props.runway_days : null;
   const nextDate = str(props.next_income_date as string | null, "") || null;

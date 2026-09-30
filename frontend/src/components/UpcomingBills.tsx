@@ -1,9 +1,11 @@
-import { eur, shortDate } from "../format";
+import { shortDate } from "../format";
+import { useEur } from "../privacy";
 import { arr, num, type SectionProps } from "./types";
 
 interface Bill { counterparty: string; amount_eur: number; date: string; category: string }
 
 export default function UpcomingBills({ props }: SectionProps) {
+  const eur = useEur();
   const bills = arr<Bill>(props.bills).slice(0, 5);
   const total = num(props.total_eur);
   return (

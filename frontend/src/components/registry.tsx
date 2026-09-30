@@ -6,6 +6,7 @@ import BalanceHero from "./BalanceHero";
 import FamilyBudgetHero from "./FamilyBudgetHero";
 import ForYouFeed from "./ForYouFeed";
 import InvoiceTracker from "./InvoiceTracker";
+import KateTile from "./KateTile";
 import PensionHero from "./PensionHero";
 import QuickActions from "./QuickActions";
 import RunwayHero from "./RunwayHero";
@@ -13,6 +14,7 @@ import SavingsGoal from "./SavingsGoal";
 import ScamShield from "./ScamShield";
 import SpendingByCategory from "./SpendingByCategory";
 import SplitBills from "./SplitBills";
+import SubscriptionsTile from "./SubscriptionsTile";
 import TaxReserveHero from "./TaxReserveHero";
 import UpcomingBills from "./UpcomingBills";
 
@@ -31,6 +33,8 @@ export const registry: Record<Component, SectionComponent> = {
   ScamShield,
   AdvisorContact,
   SpendingByCategory,
+  KateTile,
+  SubscriptionsTile,
 };
 
 const warned = new Set<string>();

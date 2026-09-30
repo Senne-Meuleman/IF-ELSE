@@ -13,6 +13,11 @@ the home screen you see: the system composed it from signals in the customer's o
 - **Explainable and controllable**: "Why am I seeing this?" on every card and every section; dismiss, snooze,
   less like this, pin, hide, consent switch.
 - **Time travel**: the same customer, recomputed "as of" any date over 8 years. Watch the layout morph.
+- **Yours to shape** (v2): pin tiles to a slot (they stay put while the rest adapts), hide tiles, add from a tile
+  gallery, restyle (text size, contrast, dark mode, tone, accent, reduce motion, hide amounts), every setting with
+  an **Auto** default. When life changes, the app **suggests** a tile instead of silently rearranging yours.
+- **Kate** (v2): a chat assistant grounded in the same signals. "Ask Kate" on every card, a proactive opener, and
+  she can *propose* changes (pin a tile, bigger text, "we're expecting") that you confirm with one tap.
 
 Built for the Tectonic Hackathon (KBC challenge). **All data is synthetic.** See `docs/DESIGN.md` for the design and
 `docs/KBC-QUESTIONS.md` for how this answers KBC's five questions.
@@ -66,20 +71,21 @@ transactions ─► features ─► persona mix ─┬─► layout planner ─�
 | `backend/synth/` | ~1,000 synthetic customers with injected scenarios + 3 hand-crafted demo customers (8-year histories) |
 | `backend/app/engine/features.py` | transactions → features (income pattern, recurring payments, runway, idle cash, life events) |
 | `backend/app/engine/persona.py` | features → weighted persona mix with plain-language evidence |
-| `backend/app/engine/cards.py` | 9 card generators, each with evidence, impact, lifecycle stage |
+| `backend/app/engine/cards.py` | 13 card generators, each with evidence, impact, lifecycle stage |
 | `backend/app/engine/ranker.py` | `persona_fit × (urgency, impact, confidence, novelty) × fatigue`, then hard constraints |
-| `backend/app/engine/layout.py` | component registry + deterministic planner → validated layout spec |
+| `backend/app/engine/layout.py` | component registry + deterministic planner → validated layout spec; pins, style overrides, tile gallery, suggestions |
+| `backend/app/engine/kate.py` | Kate: grounded intent rules → reply + proposed actions; optional Gemini rephrasing with number validation |
 | `backend/app/main.py` | FastAPI: session auth, `/api/me/*` from session only, feedback, prefs, consent, advisor overview |
 | `frontend/` | React + Vite + Framer Motion: control panel, phone frame, registry renderer, animated morphs |
 
-Tests: `cd backend && py -3.12 -m pytest` (90 tests: synth, features, persona, cards, ranker, layout, pipeline, API incl. IDOR).
+Tests: `cd backend && py -3.12 -m pytest` (118 tests: synth, features, persona, cards, ranker, layout, pipeline, Kate, API incl. IDOR).
 
 Offline evaluation against the injected ground truth: `cd backend && py -3.12 -m scripts.evaluate`
 
 | Metric (1,000 synthetic customers, seed 42) | Value |
 |---|---|
 | persona recall / dominant-persona precision | 0.94 / 1.00 |
-| feed precision@5 / recall vs injected events | 0.66 / 0.86 |
+| feed precision@5 / recall vs injected events | 0.66 / 0.85 |
 | scoring time per customer (laptop, single core) | ≈ 3 ms |
 
 Remaining misses are mostly by design: renewals more than 45 days out are not shown yet, and a price increase that
@@ -93,6 +99,9 @@ has not been charged yet cannot be detected.
 - Every input is a Pydantic model with patterns, enums and length limits. SQL uses bound parameters only.
 - Security headers + CSP; the frontend renders text nodes only, never HTML.
 - Advisor endpoints check the role server-side and write to `audit_log`.
+- Kate can't change anything herself: she returns proposed actions, which the app runs through the same validated
+  endpoints after the customer taps. Messages ≤ 500 chars, 30/min per user; LLM output (if enabled) must be plain
+  text whose numbers all appear in the grounded context, else the deterministic answer is used.
 - Secrets only via `.env` (see `.env.example`); `ground_truth` is never returned to customers.
 
 ## Scale story
@@ -109,14 +118,22 @@ open is a cache read. The advisor overview times scoring the whole synthetic por
 2. Switch to `sara`: a 59 % freelancer / 41 % young family blend nobody designed. Open the car-insurance card,
    tap ⓘ for the evidence and the honest comparison. Move the slider to 10 Oct: the card turns urgent.
 3. Swipe a card away or choose "less like this": the feed re-ranks. Scroll to "✓ You're all caught up".
-4. Switch to `jan`: large text, high contrast, pension hero, scam shield, duplicate charge, idle cash.
-5. Log in as `advisor` and call `GET /api/advisor/overview` for the scale numbers.
+4. Switch to `jan`: large text, high contrast, pension hero, scam shield, and an urgent "First payment of €1.250 to
+   Tech Support Services BV. Was this you?" Tap **Ask Kate** → "That wasn't me" → she gives the Card Stop number.
+5. **Make it yours**: as `lotte`, tap Edit, pin a tile, then drag the slider: the pinned tile stays while the rest
+   morphs. At Jan 2026 a banner suggests "You've started invoicing clients. Add Tax reserve?". Open settings and
+   pick dark mode or large text; Explain mode now says "You chose …".
+6. Ask Kate "we're expecting a baby": she proposes to take it into account; one tap shifts the persona mix, with
+   the evidence "You told Kate on …".
+7. Log in as `advisor` and call `GET /api/advisor/overview` for the scale numbers.
 
 ## Not done / honest limitations
 
 - Rules, not ML: persona scoring and ranking are transparent rule-based models by design; the contracts allow
   swapping in trained models.
 - LLM copywriting (Gemini) and voice (ElevenLabs) are designed (see `docs/DESIGN.md` §6.7) but not wired in;
-  everything works with deterministic templates.
+  everything works with deterministic templates. Kate's optional Gemini layer (`KATE_LLM=gemini`, needs
+  `pip install google-genai` and credentials) is implemented but untested against the live API; Kate runs on
+  deterministic rules by default.
 - Offers and prices in comparison cards are illustrative placeholders, not KBC products.
 - English only. Synthetic data only.

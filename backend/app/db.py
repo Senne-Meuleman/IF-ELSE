@@ -11,7 +11,8 @@ import sqlite3
 from contextlib import contextmanager
 from typing import Iterator
 
-from .schemas import Customer, FeedbackRow, LayoutPrefRow, Prefs, Transaction
+from .schemas import (Customer, DeclaredSignalRow, FeedbackRow, LayoutPrefRow, Prefs, StylePrefs,
+                      SuggestionDismissal, Transaction)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_DB_PATH = os.path.abspath(os.path.join(HERE, "..", "kbc.db"))
@@ -63,6 +64,23 @@ CREATE TABLE IF NOT EXISTS layout_prefs (
   component TEXT NOT NULL,
   state TEXT NOT NULL CHECK (state IN ('pinned','hidden')),
   created_at TEXT NOT NULL,
+  position INTEGER,
+  PRIMARY KEY (customer_id, component)
+);
+CREATE TABLE IF NOT EXISTS style_prefs (
+  customer_id INTEGER PRIMARY KEY REFERENCES customers(id),
+  data TEXT NOT NULL DEFAULT '{}'
+);
+CREATE TABLE IF NOT EXISTS declared_signals (
+  customer_id INTEGER NOT NULL REFERENCES customers(id),
+  signal TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  PRIMARY KEY (customer_id, signal)
+);
+CREATE TABLE IF NOT EXISTS suggestion_dismissals (
+  customer_id INTEGER NOT NULL REFERENCES customers(id),
+  component TEXT NOT NULL,
+  created_at TEXT NOT NULL,
   PRIMARY KEY (customer_id, component)
 );
 CREATE TABLE IF NOT EXISTS visits (
@@ -89,6 +107,14 @@ def connect(path: str | None = None) -> sqlite3.Connection:
 
 def init_schema(conn: sqlite3.Connection) -> None:
     conn.executescript(SCHEMA)
+    migrate(conn)
+
+
+def migrate(conn: sqlite3.Connection) -> None:
+    """Bring a database built by an older version up to date (new tables come from CREATE IF NOT EXISTS)."""
+    cols = {r["name"] for r in conn.execute("PRAGMA table_info(layout_prefs)").fetchall()}
+    if "position" not in cols:
+        conn.execute("ALTER TABLE layout_prefs ADD COLUMN position INTEGER")
 
 
 @contextmanager
@@ -155,17 +181,31 @@ def get_prefs(conn: sqlite3.Connection, customer_id: int) -> Prefs:
         (customer_id,),
     ).fetchall()
     lp = conn.execute(
-        "SELECT component, state FROM layout_prefs WHERE customer_id = ?", (customer_id,)
+        "SELECT component, state, position FROM layout_prefs WHERE customer_id = ? ORDER BY created_at, component",
+        (customer_id,),
     ).fetchall()
     visit = conn.execute("SELECT last_visit FROM visits WHERE customer_id = ?", (customer_id,)).fetchone()
+    style = conn.execute("SELECT data FROM style_prefs WHERE customer_id = ?", (customer_id,)).fetchone()
+    declared = conn.execute(
+        "SELECT signal, created_at FROM declared_signals WHERE customer_id = ? ORDER BY created_at", (customer_id,)
+    ).fetchall()
+    dismissed = conn.execute(
+        "SELECT component, created_at FROM suggestion_dismissals WHERE customer_id = ?", (customer_id,)
+    ).fetchall()
     return Prefs(
         feedback=[
             FeedbackRow(card_key=r["card_key"], card_type=r["card_type"], decision=r["decision"],
                         created_at=dt.date.fromisoformat(r["created_at"][:10]))
             for r in fb
         ],
-        layout_prefs=[LayoutPrefRow(component=r["component"], state=r["state"]) for r in lp],
+        layout_prefs=[LayoutPrefRow(component=r["component"], state=r["state"], position=r["position"]) for r in lp],
         last_visit=dt.date.fromisoformat(visit["last_visit"][:10]) if visit else None,
+        style=StylePrefs.model_validate_json(style["data"]) if style else StylePrefs(),
+        declared=[DeclaredSignalRow(signal=r["signal"], created_at=dt.date.fromisoformat(r["created_at"][:10]))
+                  for r in declared],
+        dismissed_suggestions=[SuggestionDismissal(component=r["component"],
+                                                   created_at=dt.date.fromisoformat(r["created_at"][:10]))
+                               for r in dismissed],
     )
 
 
@@ -202,14 +242,58 @@ def add_feedback(conn: sqlite3.Connection, customer_id: int, card_key: str, card
     )
 
 
-def set_layout_pref(conn: sqlite3.Connection, customer_id: int, component: str, state: str, at: dt.date) -> None:
+def set_layout_pref(conn: sqlite3.Connection, customer_id: int, component: str, state: str, at: dt.date,
+                    position: int | None = None) -> None:
     if state == "reset":
         conn.execute("DELETE FROM layout_prefs WHERE customer_id = ? AND component = ?", (customer_id, component))
         return
+    # created_at orders pins; use the wall clock so the latest pin wins ties, whatever the time-travel date
+    stamp = f"{at.isoformat()}T{dt.datetime.now(dt.timezone.utc).strftime('%H:%M:%S.%f')}"
     conn.execute(
-        "INSERT INTO layout_prefs (customer_id, component, state, created_at) VALUES (?, ?, ?, ?) "
-        "ON CONFLICT(customer_id, component) DO UPDATE SET state = excluded.state, created_at = excluded.created_at",
-        (customer_id, component, state, at.isoformat()),
+        "INSERT INTO layout_prefs (customer_id, component, state, created_at, position) VALUES (?, ?, ?, ?, ?) "
+        "ON CONFLICT(customer_id, component) DO UPDATE SET state = excluded.state, created_at = excluded.created_at, "
+        "position = excluded.position",
+        (customer_id, component, state, stamp, position if state == "pinned" else None),
+    )
+
+
+def unpin_heroes(conn: sqlite3.Connection, customer_id: int, heroes: tuple[str, ...]) -> None:
+    """Only one hero can be pinned: pinning a new one releases the others."""
+    conn.executemany(
+        "DELETE FROM layout_prefs WHERE customer_id = ? AND component = ? AND state = 'pinned'",
+        [(customer_id, h) for h in heroes],
+    )
+
+
+def reset_layout(conn: sqlite3.Connection, customer_id: int) -> None:
+    conn.execute("DELETE FROM layout_prefs WHERE customer_id = ?", (customer_id,))
+    conn.execute("DELETE FROM suggestion_dismissals WHERE customer_id = ?", (customer_id,))
+
+
+def set_style(conn: sqlite3.Connection, customer_id: int, style: StylePrefs) -> None:
+    conn.execute(
+        "INSERT INTO style_prefs (customer_id, data) VALUES (?, ?) "
+        "ON CONFLICT(customer_id) DO UPDATE SET data = excluded.data",
+        (customer_id, style.model_dump_json()),
+    )
+
+
+def set_declared(conn: sqlite3.Connection, customer_id: int, signal: str, state: str, at: dt.date) -> None:
+    if state == "clear":
+        conn.execute("DELETE FROM declared_signals WHERE customer_id = ? AND signal = ?", (customer_id, signal))
+        return
+    conn.execute(
+        "INSERT INTO declared_signals (customer_id, signal, created_at) VALUES (?, ?, ?) "
+        "ON CONFLICT(customer_id, signal) DO UPDATE SET created_at = excluded.created_at",
+        (customer_id, signal, at.isoformat()),
+    )
+
+
+def dismiss_suggestion(conn: sqlite3.Connection, customer_id: int, component: str, at: dt.date) -> None:
+    conn.execute(
+        "INSERT INTO suggestion_dismissals (customer_id, component, created_at) VALUES (?, ?, ?) "
+        "ON CONFLICT(customer_id, component) DO UPDATE SET created_at = excluded.created_at",
+        (customer_id, component, at.isoformat()),
     )
 
 

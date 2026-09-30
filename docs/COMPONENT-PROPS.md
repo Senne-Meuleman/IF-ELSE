@@ -21,10 +21,13 @@ All amounts are plain numbers in EUR (positive). Dates are ISO `YYYY-MM-DD`. Eve
 | `ScamShield` | half | `{ tips: string[], hotline }` — 3 tips |
 | `AdvisorContact` | half | `{ advisor_name, reason, slots: string[] }` — 2–3 slot labels like "Tue 14:00" |
 | `SpendingByCategory` | half | `{ month_label, total_eur, categories: [{category, eur}] }` — top 6 |
+| `KateTile` | full | `{ prompt, card_key: string \| null, quick_replies: string[] }` — Kate's opener about the top feed card; tapping opens the Kate chat with that card as context |
+| `SubscriptionsTile` | half | `{ monthly_total_eur, count, items: [{counterparty, amount_eur, period_days, previous_amount_eur: number \| null}] }` — max 6, biggest first; `previous_amount_eur` set when the price changed |
 
 Sizes: `hero` (the first section, full width, big), `full` (full width), `half` (half width; two halves sit side by side, an odd one stretches).
 
 Rules:
 - Exactly one hero, always first. `ForYouFeed` always second.
+- `Section.pinned` is true for tiles the customer pinned; pinned tiles keep their slot while the rest adapts.
 - The frontend must ignore unknown component names (log a warning, render nothing).
 - The frontend never receives HTML; all strings are rendered as text.

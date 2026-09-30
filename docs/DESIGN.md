@@ -1,7 +1,7 @@
 # KBC Adaptive Home — High-Level Design
 
 > **Audience:** the coding agents and teammates building this project.
-> **Status:** v1, 2026-09-30 (Tectonic Hackathon, KBC challenge).
+> **Status:** v2, 2026-09-30 (adds §6.9 customisation and §6.10 Kate) (Tectonic Hackathon, KBC challenge).
 > **Rule for agents:** this document is the source of truth for scope, contracts and file ownership. If you must deviate, update this doc in the same change and say why.
 
 ---
@@ -155,7 +155,6 @@ accounts(customer_id, balance_today)
 transactions(id, customer_id, date, amount, category, counterparty)
 users(id, username UNIQUE, password_hash, role['customer'|'advisor'], customer_id)
 feedback(id, customer_id, card_key, card_type, decision, created_at)
-layout_prefs(customer_id, component, state['pinned'|'hidden'], created_at)
 audit_log(id, at, user_id, action, target)
 ```
 
@@ -256,7 +255,6 @@ score = persona_fit × (0.40·urgency + 0.30·impact + 0.20·confidence + 0.10·
 3. Service cards at stage `urgent` always come first.
 4. At most **1 commercial card per 3 cards** shown.
 5. At most **2 cards of the same family**.
-6. At most **7 cards**. Then the feed shows **"✓ You're all caught up"** with a count of hidden items.
 
 Output: ordered `Card[]` with `rank_explanation` (e.g. `"urgent · €1,840 impact · fits freelancer"`).
 
@@ -285,7 +283,6 @@ Output: ordered `Card[]` with `rank_explanation` (e.g. `"urgent · €1,840 impa
 1. `component_score = Σ_persona weight × affinity + signal_boosts` (e.g. cash-flow stress boosts `AdvisorContact` and `RunwayHero`).
 2. Hero = the highest-scoring `*Hero` component.
 3. `ForYouFeed` is always placed directly after the hero.
-4. Add the next best components up to a **density budget** (compact: 6, comfortable: 5, large: 4). Apply the customer's `pinned`/`hidden` layout prefs.
 5. Theme from the dominant persona, with overrides: retiree weight ≥ 0.5 → `density: large`, `contrast: high`.
 6. Every decision appends a reason to `layout.explanations[component]`.
 
@@ -314,6 +311,56 @@ Output: ordered `Card[]` with `rank_explanation` (e.g. `"urgent · €1,840 impa
 - **Safety:** render text with React text nodes only; **never** `dangerouslySetInnerHTML`.
 - **Voice (stretch):** a "Read my day" button calls `POST /api/me/voice`, which uses ElevenLabs server-side (API key never in the browser) and returns audio.
 
+### 6.9 Customisation (v2): the system proposes, the customer decides
+
+The home screen stays **adaptive by default**; customisation is a sparse layer of overrides on top. That keeps the
+pitch intact ("we never designed this screen") while giving the customer the last word.
+
+**Layout overrides** (`layout_prefs`, planner in `engine/layout.py`)
+- **Pin** a tile: it keeps its **slot** (`position` = index among the tiles below the feed) while everything else
+  keeps adapting around it. Demo: pin a tile, drag the time slider, and the pinned tile stays put as the layout morphs.
+- **Pin a hero**: the pinned hero stays the main tile. Only one hero can be pinned (pinning another releases the first).
+- Pins beyond the density budget are still shown (the budget grows to fit them); `position: null` = first free slot.
+- **Reset to adaptive** (`/api/me/layout-reset`) removes all pins, hides and suggestion dismissals.
+
+**Suggestions** (`HomeResponse.suggestions`): once the customer has customised, the system does not silently move
+their tiles. Instead it *proposes*:
+1. *Life changed*: a life event in the last 120 days (first invoice, baby, pension, first salary, mortgage) or a
+   **signal the customer told Kate** maps to tiles that aren't on the home screen yet. "You've started invoicing
+   clients. Add Tax reserve?"
+2. *Better hero*: the customer pinned a hero, but another scores ≥ 0.25 higher.
+Accept = pin (as hero if it is one). "Not now" = snoozed 90 days. Hidden tiles are never suggested.
+
+**Tile gallery** (`HomeResponse.gallery`): every tile with label, description, planner score and the same plain-language
+reason as Explain mode. The top 3 available tiles are marked "Suggested for you".
+
+**Style overrides** (`style_prefs`, `/api/me/style`): density, contrast, tone, appearance (light/dark), accent,
+reduce motion, hide amounts. Every setting defaults to **Auto** (`null`) = the persona-driven theme. The effective
+theme carries `overrides[]`, and the theme explanation starts with "You chose …", so Explain mode stays truthful.
+
+**Declared signals** (`declared_signals`, `/api/me/declare`): "we're expecting", "I'm going freelance", "I'm retiring",
+"I'm studying". Each adds a raw score to one persona (`persona.py`, `SCORE["declared"]`) with evidence
+"You told Kate on 30 Sep 2026 that …". It applies from the day it was said, so time travel respects it. Clearable.
+
+### 6.10 Kate: the conversational side of the engine (`engine/kate.py`)
+
+Kate answers from the **same grounded data** the home screen is built from (HomeResponse + Features), so she can explain
+any card, the persona mix and the layout, and she can act on the same preference endpoints.
+
+- **Entry points**: the Kate tab (proactive opener about the top card), "Ask Kate" on every card (card as context), and
+  the `KateTile` on the home screen.
+- **Deterministic first**: intent rules (card questions: why / what should I do / coverage / remind me; style
+  requests; pin/hide tiles; declared life changes; balance, spending, subscriptions, next income, scams, advisor;
+  "why does my app look like this"). All facts come from the engine; no numbers are invented.
+- **Proposals, not actions**: Kate returns `KateAction`s (`pin_tile`, `hide_tile`, `set_style`, `snooze_card`,
+  `declare`, …). The app shows a button; the customer taps; the app calls the regular validated endpoint. Kate herself
+  can never change state, so there is no new write path to secure.
+- **Optional LLM** (`KATE_LLM=gemini`): may only **rephrase** the rules answer. Input is a grounded JSON context (counterparty
+  names as quoted data); output must be ≤ 1,100 chars, no links/markup, and **every number must occur in the context**.
+  Any failure or timeout (4 s) → the deterministic answer. `KateReply.source` says which one you got.
+- **Security**: session-derived customer only, `message` ≤ 500 chars, `card_key` pattern-validated, history ≤ 12 turns,
+  30 messages/minute per user, declared signals written to `audit_log`.
+
 ---
 
 ## 7. API contracts
@@ -327,8 +374,13 @@ All customer endpoints derive the customer from the session. **No customer IDs i
 | GET | `/api/me/home` | `?as_of=YYYY-MM-DD` (optional, clamped to the customer's data range, not in the future) | `HomeResponse` |
 | GET | `/api/me/timeline` | – | `{min_date, max_date, milestones: [{date, label}]}` |
 | POST | `/api/me/feedback` | `{card_key, card_type, decision: dismiss\|snooze\|less\|accept\|reset}` | fresh `HomeResponse` |
-| POST | `/api/me/layout-prefs` | `{component, state: pinned\|hidden\|reset}` | fresh `HomeResponse` |
 | POST | `/api/me/consent` | `{consent_personalization: bool}` | fresh `HomeResponse` |
+| POST | `/api/me/layout-prefs` | `{component, state: pinned\|hidden\|reset, position?: 0..20}` (v2: position) | fresh `HomeResponse` |
+| POST | `/api/me/layout-reset` | – | fresh `HomeResponse` (all pins/hides cleared) |
+| POST | `/api/me/style` | `StylePrefs` (`null` = Auto) | fresh `HomeResponse` |
+| POST | `/api/me/suggestion` | `{component, decision: accept\|dismiss}` | fresh `HomeResponse` |
+| POST | `/api/me/declare` | `{signal: expecting_baby\|going_freelance\|retiring\|studying, state: set\|clear}` | fresh `HomeResponse` |
+| POST | `/api/me/kate` | `{message ≤500, card_key?, history ≤12}` | `KateReply {reply, actions[], quick_replies[], source}` |
 | POST | `/api/me/voice` (stretch) | – | `audio/mpeg` |
 | GET | `/api/advisor/overview` (stretch) | role = advisor | persona distribution, card volume, scoring time, projection to 2.3M |
 
@@ -365,7 +417,6 @@ All customer endpoints derive the customer from the session. **No customer IDs i
       "cta": {"label": "Compare coverage", "action": "open_compare"}
     }],
     "caught_up": true,
-    "hidden_count": 3
   },
   "generated_at": "2026-09-30T14:02:11Z",
   "llm_copy": false

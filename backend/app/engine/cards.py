@@ -33,11 +33,46 @@ SCAM_CONFIDENCE_BASE = 0.5
 SCAM_CONFIDENCE_SENIOR = 0.75
 SCAM_SENIOR_AGE = 65
 KBC_NAMES = ("kbc", "cbc")
+# pension savings (pensioensparen): tax reduction season runs from September to the 31 Dec deposit deadline
+PENSION_SEASON_START_MONTH = 9
+PENSION_MIN_AGE, PENSION_MAX_AGE = 18, 64
+PENSION_MAX_DEPOSIT_EUR = 1050         # yearly ceiling for the 30 % tax reduction (confirm the year's figure)
+PENSION_TAX_RATE = 0.30
+PENSION_NAMES = ("pensioen", "pension")
+# late client: a steady payer who is clearly later than usual, and later than ever before
+LATE_CLIENT_MIN_PAYMENTS = 4
+LATE_CLIENT_GAP_MULTIPLE = 1.5         # late = more than 1.5x the median gap ...
+LATE_CLIENT_STEADY_SPREAD = 1.5        # ... and only for steady payers: 80th-percentile gap <= 1.5x the median
+LATE_CLIENT_MIN_DAYS = 45
+LATE_CLIENT_MAX_DAYS = 365             # silent for longer than a year = a former client, not a late one
+# protection gap: child signals but no family liability insurance
+PROTECTION_CHILD_LOOKBACK_DAYS = 365
+PROTECTION_INSURANCE_LOOKBACK_DAYS = 395   # 13 months: a yearly premium may shift by a few weeks
+PROTECTION_CHILD_CATEGORIES = frozenset({"child_benefit", "childcare", "baby"})
+# new payee: a first, large payment to someone never paid before
+NEW_PAYEE_MIN_EUR = 500
+NEW_PAYEE_LOOKBACK_DAYS = 7
+NEW_PAYEE_URGENT_DAYS = 2
+NEW_PAYEE_MIN_HISTORY_DAYS = 90        # without history every payee looks new
+NEW_PAYEE_MAX_CARDS = 2
+NEW_PAYEE_EXPECTED = frozenset({       # large first payments that are normal life admin, not a scam signal
+    "mortgage", "notary", "furniture", "tax", "vat_payment", "social_contribution", "savings_transfer",
+    "rent", "tuition", "childcare",
+})
+NAME_MAX = 40
 
 
 def _slug(s: str) -> str:
     s = re.sub(r"[^a-z0-9]+", "-", s.lower()).strip("-")
     return s[:40] or "x"
+
+
+def _name(s: str) -> str:
+    """Counterparty names come from transaction data (attacker-controllable): strip control characters,
+    collapse whitespace and cap the length before putting them in customer-facing text."""
+    s = "".join(ch if ch.isprintable() else " " for ch in s)
+    s = re.sub(r"\s+", " ", s).strip()
+    return (s[:NAME_MAX - 1].rstrip() + "…") if len(s) > NAME_MAX else (s or "an unknown payee")
 
 
 def stage_for(due_date: dt.date | None, as_of: dt.date) -> Stage | None:
@@ -286,9 +321,146 @@ def gen_scam_awareness(f: Features, c: Customer, txs: list[Transaction], as_of: 
     )]
 
 
+def gen_pension_savings(f: Features, c: Customer, txs: list[Transaction], as_of: dt.date) -> list[Card]:
+    if as_of.month < PENSION_SEASON_START_MONTH or "pension_savings" in c.products:
+        return []
+    if not (PENSION_MIN_AGE <= f.age <= PENSION_MAX_AGE) or not (f.has_salary or f.has_invoice_income):
+        return []
+    if f.balance_eur < PENSION_MAX_DEPOSIT_EUR or (f.runway_days is not None and f.runway_days <= RUNWAY_MAX_DAYS):
+        return []   # don't push a deposit on someone without room for it
+    year_start = dt.date(as_of.year, 1, 1)
+    if any(t.category == "savings_transfer" and t.amount < 0 and t.date >= year_start
+           and any(k in t.counterparty.lower() for k in PENSION_NAMES) for t in _past(txs, as_of)):
+        return []
+    due = dt.date(as_of.year, 12, 31)
+    stage = stage_for(due, as_of)
+    if stage is None:
+        return []
+    benefit = round(PENSION_MAX_DEPOSIT_EUR * PENSION_TAX_RATE)
+    income = "a salary" if f.has_salary else "invoice income"
+    return [Card(
+        card_key=f"pension_savings:{as_of.year}", card_type="pension_savings", family="opportunity", stage=stage,
+        title=f"Pension savings: up to {fmt_eur(benefit)} back in tax for {as_of.year}",
+        body=(f"Deposits into a pension savings plan before {fmt_date(due)} give a tax reduction of up to "
+              f"{round(PENSION_TAX_RATE * 100)}% on up to {fmt_eur(PENSION_MAX_DEPOSIT_EUR)} a year. "
+              "What you actually get back depends on your tax situation."),
+        eur_impact=benefit, due_date=due, confidence=0.5, commercial=True,
+        evidence=[f"You have {income}, so you likely pay Belgian income tax",
+                  f"No pension savings deposit seen in {as_of.year}",
+                  f"Deposits count for {as_of.year} until {fmt_date(due)}"],
+        cta=Cta(label="See how it works", action="open_pension_savings"),
+        details={"max_deposit_eur": PENSION_MAX_DEPOSIT_EUR, "tax_rate": PENSION_TAX_RATE,
+                 "note": "Up to amounts; the actual tax reduction depends on your situation."},
+    )]
+
+
+def gen_late_client(f: Features, c: Customer, txs: list[Transaction], as_of: dt.date) -> list[Card]:
+    by_payer: dict[str, list[Transaction]] = defaultdict(list)
+    for t in _past(txs, as_of):
+        if t.category == "invoice_income" and t.amount > 0:
+            by_payer[t.counterparty].append(t)
+    best = None
+    for cp, items in by_payer.items():
+        if len(items) < LATE_CLIENT_MIN_PAYMENTS:
+            continue
+        items.sort(key=lambda t: (t.date, t.id))
+        gaps = sorted(g for g in ((b.date - a.date).days for a, b in zip(items, items[1:])) if g > 0)
+        if len(gaps) < LATE_CLIENT_MIN_PAYMENTS - 1:
+            continue
+        med_gap = round(statistics.median(gaps))
+        p80 = gaps[min(len(gaps) - 1, int(len(gaps) * 0.8))]
+        if p80 > LATE_CLIENT_STEADY_SPREAD * max(med_gap, 1):
+            continue   # irregular payer: "late" would be noise
+        since = (as_of - items[-1].date).days
+        if since > LATE_CLIENT_MAX_DAYS or since <= max(med_gap * LATE_CLIENT_GAP_MULTIPLE, LATE_CLIENT_MIN_DAYS, gaps[-1]):
+            continue
+        ratio = since / max(med_gap, 1)
+        if best is None or ratio > best[0]:
+            best = (ratio, cp, items, med_gap, since)
+    if best is None:
+        return []
+    _, cp, items, med_gap, since = best
+    name, last = _name(cp), items[-1]
+    typical = round(statistics.median(t.amount for t in items), 2)
+    return [Card(
+        card_key=f"late_client:{_slug(cp)}-{last.date.isoformat()}", card_type="late_client", family="anomaly",
+        stage="info",
+        title=f"{name} usually pays every ~{med_gap} days; last payment was {since} days ago",
+        body=f"A typical payment from {name} is about {fmt_eur(typical)}. If an invoice is still open, a friendly reminder may help.",
+        eur_impact=typical, due_date=None, confidence=0.65, commercial=False,
+        evidence=[f"{len(items)} payments from {name} so far, typically every {med_gap} days",
+                  f"Last payment {fmt_eur(last.amount)} on {fmt_date(last.date)}, the longest wait so far",
+                  "We only see payments, not your open invoices"],
+        cta=Cta(label="Send a reminder", action="invoice_reminder"),
+        details={"median_gap_days": med_gap, "days_since_last": since},
+    )]
+
+
+def gen_protection_gap(f: Features, c: Customer, txs: list[Transaction], as_of: dt.date) -> list[Card]:
+    if "family_insurance" in c.products:
+        return []
+    past = _past(txs, as_of)
+    child_lo = as_of - dt.timedelta(days=PROTECTION_CHILD_LOOKBACK_DAYS)
+    ins_lo = as_of - dt.timedelta(days=PROTECTION_INSURANCE_LOOKBACK_DAYS)
+    child = [t for t in past if t.category in PROTECTION_CHILD_CATEGORIES and t.date > child_lo]
+    if not child or any(t.category == "insurance_family" and t.date > ins_lo for t in past):
+        return []
+    seen = sorted({t.category.replace("_", " ") for t in child})
+    return [Card(
+        card_key=f"protection_gap:family-{as_of.year}", card_type="protection_gap", family="protection",
+        stage="info",
+        title="Your family grew. Did your insurance?",
+        body=("We don't see a family liability insurance in your payments. It's worth checking you're covered; "
+              "you may already be, for example through a partner's policy."),
+        eur_impact=0.0, due_date=None, confidence=0.6, commercial=True,
+        evidence=[f"Payments for {', '.join(seen)} in the last 12 months",
+                  "No family insurance payment in the last 13 months"],
+        cta=Cta(label="Check my cover", action="open_family_insurance"),
+        details={"typically_covers": [
+            "Damage your children accidentally cause to others (e.g. a broken window, a bike accident)",
+            "Damage you or your partner accidentally cause to others in private life",
+            "Legal help after such an incident (depends on the policy)",
+        ], "note": "Cover and prices differ per policy; we don't quote a price here."},
+    )]
+
+
+def gen_new_payee(f: Features, c: Customer, txs: list[Transaction], as_of: dt.date) -> list[Card]:
+    past = sorted(_past(txs, as_of), key=lambda t: (t.date, t.id))
+    if not past or (as_of - past[0].date).days < NEW_PAYEE_MIN_HISTORY_DAYS:
+        return []
+    lo = as_of - dt.timedelta(days=NEW_PAYEE_LOOKBACK_DAYS)
+    seen: set[str] = set()
+    out: list[Card] = []
+    for t in past:
+        key = t.counterparty.strip().lower()
+        first = key not in seen
+        seen.add(key)
+        if not first or t.date <= lo or t.amount > -NEW_PAYEE_MIN_EUR or t.category in NEW_PAYEE_EXPECTED:
+            continue
+        if any(k in key for k in KBC_NAMES) or (t.date - past[0].date).days < NEW_PAYEE_MIN_HISTORY_DAYS:
+            continue
+        name = _name(t.counterparty)
+        ago = (as_of - t.date).days
+        out.append(Card(
+            card_key=f"new_payee:{_slug(t.counterparty)}-{t.date.isoformat()}", card_type="new_payee",
+            family="protection", stage="urgent" if ago <= NEW_PAYEE_URGENT_DAYS else "soon",
+            title=f"First payment of {fmt_eur(t.amount)} to {name}. Was this you?",
+            body=("You've never paid this recipient before. If you didn't make this payment, or someone "
+                  "pressured you to pay quickly, call us straight away."),
+            eur_impact=abs(t.amount), due_date=None, confidence=0.7, commercial=False,
+            evidence=[f"{fmt_eur(t.amount)} to {name} on {fmt_date(t.date)}",
+                      "No earlier payments to or from this recipient in your history",
+                      "Scammers often push for one large, urgent payment to a new account"],
+            cta=Cta(label="Yes, that was me", action="confirm_payee"),
+        ))
+    out.sort(key=lambda k: -k.eur_impact)
+    return out[:NEW_PAYEE_MAX_CARDS]
+
+
 GENERATORS = [
     gen_insurance_renewal, gen_vat_reserve, gen_price_increase, gen_duplicate_charge,
     gen_runway, gen_cashflow_squeeze, gen_idle_cash, gen_life_event, gen_scam_awareness,
+    gen_pension_savings, gen_late_client, gen_protection_gap, gen_new_payee,
 ]
 
 

@@ -33,6 +33,10 @@ AFFINITY: dict[str, dict[Persona, float]] = {
     "idle_cash":         {"student": 0.2, "young_professional": 0.8, "young_family": 0.7, "freelancer": 0.7, "retiree": 0.9},
     "life_event":        {"student": 0.9, "young_professional": 0.9, "young_family": 0.9, "freelancer": 0.9, "retiree": 0.9},
     "scam_awareness":    {"student": 0.2, "young_professional": 0.2, "young_family": 0.3, "freelancer": 0.3, "retiree": 1.0},
+    "pension_savings":   {"student": 0.1, "young_professional": 0.6, "young_family": 0.5, "freelancer": 0.6, "retiree": 0.1},
+    "late_client":       {"student": 0.1, "young_professional": 0.2, "young_family": 0.3, "freelancer": 1.0, "retiree": 0.2},
+    "protection_gap":    {"student": 0.2, "young_professional": 0.4, "young_family": 0.9, "freelancer": 0.5, "retiree": 0.3},
+    "new_payee":         {"student": 0.7, "young_professional": 0.7, "young_family": 0.7, "freelancer": 0.7, "retiree": 1.0},
 }
 
 

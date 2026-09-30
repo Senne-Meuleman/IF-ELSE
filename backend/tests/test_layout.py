@@ -9,10 +9,14 @@ from app.schemas import (
     Features,
     HERO_COMPONENTS,
     Layout,
+    DeclaredSignalRow,
     LayoutPrefRow,
+    LifeEvent,
     PersonaWeight,
     Prefs,
     RecurringPayment,
+    StylePrefs,
+    SuggestionDismissal,
     Transaction,
 )
 
@@ -35,6 +39,8 @@ REQUIRED_PROPS = {
     "ScamShield": {"tips", "hotline"},
     "AdvisorContact": {"advisor_name", "reason", "slots"},
     "SpendingByCategory": {"month_label", "total_eur", "categories"},
+    "KateTile": {"prompt", "card_key", "quick_replies"},
+    "SubscriptionsTile": {"monthly_total_eur", "count", "items"},
 }
 
 
@@ -289,3 +295,72 @@ def test_cashflow_card_triggers_stress_boost():
                 title="t", body="b", confidence=0.8)
     lay = plan(features(age=45), mix(young_professional=1.0), cards=[card])
     assert "AdvisorContact" in _components(lay)
+
+
+# ---- v2: customisation --------------------------------------------------------
+
+
+def test_pinned_tile_keeps_its_slot_while_the_rest_adapts():
+    prefs = Prefs(layout_prefs=[LayoutPrefRow(component="ScamShield", state="pinned", position=2)])
+    for m in [mix(young_family=1.0), mix(freelancer=1.0), mix(student=1.0)]:
+        lay = plan(features(age=34, has_child_signals=True), m, prefs)
+        comps = _components(lay)
+        assert comps[2 + 2] == "ScamShield"
+        assert next(s for s in lay.sections if s.component == "ScamShield").pinned
+
+
+def test_pins_beyond_the_density_budget_are_still_shown():
+    pins = [LayoutPrefRow(component=c, state="pinned", position=i)
+            for i, c in enumerate(["ScamShield", "SplitBills", "InvoiceTracker", "AdvisorContact", "SavingsGoal"])]
+    lay = plan(features(age=70), mix(retiree=1.0), Prefs(layout_prefs=pins))
+    assert len(lay.sections) == 2 + 5
+    assert _components(lay)[2:] == ["ScamShield", "SplitBills", "InvoiceTracker", "AdvisorContact", "SavingsGoal"]
+
+
+def test_pinned_hero_wins_and_can_be_challenged_by_a_suggestion():
+    f = features(age=40, has_invoice_income=True, income_sources_180d=3)
+    prefs = Prefs(layout_prefs=[LayoutPrefRow(component="BalanceHero", state="pinned")])
+    p = layout.plan_home_layout(f, mix(freelancer=1.0), prefs, customer(40), [], AS_OF, [])
+    assert p.layout.sections[0].component == "BalanceHero" and p.layout.sections[0].pinned
+    assert p.suggestions and p.suggestions[0].component == "TaxReserveHero" and p.suggestions[0].as_hero
+
+
+def test_style_overrides_win_and_are_explained():
+    prefs = Prefs(style=StylePrefs(density="large", appearance="dark", accent="teal", privacy=True))
+    lay = plan(features(age=21, has_student_signals=True), mix(student=1.0), prefs)
+    t = lay.theme
+    assert (t.density, t.appearance, t.accent, t.privacy, t.tone) == ("large", "dark", "teal", True, "casual")
+    assert set(t.overrides) == {"density", "appearance", "accent"}
+    assert lay.explanations["theme"].startswith("You chose large text, dark mode, a teal accent.")
+    assert len(lay.sections) == layout.DENSITY_BUDGET["large"]
+
+
+def test_life_event_suggests_a_tile_until_dismissed():
+    ev = LifeEvent(type="first_invoice", date=AS_OF - dt.timedelta(days=20), evidence="first invoice")
+    f = features(age=33, has_salary=True, life_events=[ev])
+    p = layout.plan_home_layout(f, mix(young_professional=1.0), Prefs(), customer(33), [], AS_OF, [])
+    assert p.suggestions[0].component == "TaxReserveHero"
+    assert "first client payment" in p.suggestions[0].reason
+    snoozed = Prefs(dismissed_suggestions=[SuggestionDismissal(component="TaxReserveHero", created_at=AS_OF)])
+    p2 = layout.plan_home_layout(f, mix(young_professional=1.0), snoozed, customer(33), [], AS_OF, [])
+    assert all(s.component != "TaxReserveHero" for s in p2.suggestions)
+
+
+def test_declared_signal_suggests_only_after_it_was_said():
+    f = features(age=30, has_salary=True)
+    said = AS_OF - dt.timedelta(days=5)
+    prefs = Prefs(declared=[DeclaredSignalRow(signal="expecting_baby", created_at=said)])
+    p = layout.plan_home_layout(f, mix(young_professional=1.0), prefs, customer(30), [], AS_OF, [])
+    assert any(s.title.startswith("You told Kate") for s in p.suggestions)
+    before = layout.plan_home_layout(f, mix(young_professional=1.0), prefs, customer(30), [], said - dt.timedelta(days=1), [])
+    assert not any(s.title.startswith("You told Kate") for s in before.suggestions)
+
+
+def test_gallery_lists_every_tile_except_the_feed():
+    prefs = Prefs(layout_prefs=[LayoutPrefRow(component="SplitBills", state="hidden")])
+    p = layout.plan_home_layout(features(age=30), mix(young_professional=1.0), prefs, customer(30), [], AS_OF, [])
+    comps = {g.component for g in p.gallery}
+    assert comps == set(layout.REGISTRY) - {"ForYouFeed"}
+    states = {g.component: g.state for g in p.gallery}
+    assert states["SplitBills"] == "hidden" and states["BalanceHero"] == "shown"
+    assert sum(g.suggested for g in p.gallery) == 3 and all(g.state == "available" for g in p.gallery if g.suggested)

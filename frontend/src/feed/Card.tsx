@@ -1,7 +1,8 @@
 import { motion, useMotionValue, useTransform } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import type { Card as CardT, Decision } from "../api";
-import { eur, longDate } from "../format";
+import { longDate } from "../format";
+import { maskText, useEur, useMasked } from "../privacy";
 import { FAMILY_ICON } from "../components/icons";
 
 interface Props {
@@ -9,13 +10,16 @@ interface Props {
   asOf: string;
   onFeedback: (card: CardT, decision: Decision) => void;
   onCta: (action: string) => void;
+  onAskKate: (cardKey: string) => void;
 }
 
 interface ComparisonRow { item: string; current: string; kbc: string }
 
 const STAGE_LABEL: Record<string, string> = { early: "upcoming", soon: "soon", urgent: "urgent", info: "" };
 
-export default function Card({ card, asOf, onFeedback, onCta }: Props) {
+export default function Card({ card, asOf, onFeedback, onCta, onAskKate }: Props) {
+  const eur = useEur();
+  const masked = useMasked();
   const [menu, setMenu] = useState(false);
   const [drawer, setDrawer] = useState(false);
   const x = useMotionValue(0);
@@ -36,7 +40,7 @@ export default function Card({ card, asOf, onFeedback, onCta }: Props) {
   const act = (d: Decision) => { setMenu(false); onFeedback(card, d); };
 
   return (
-    <div style={{ position: "relative" }} ref={ref}>
+    <div style={{ position: "relative" }} ref={ref} data-card-key={card.card_key}>
       <motion.div className="swipe-hint" style={{ opacity: hintOpacity }}>Dismiss ✕</motion.div>
       <motion.div
         className={`fcard stage-${card.stage}`}
@@ -54,8 +58,8 @@ export default function Card({ card, asOf, onFeedback, onCta }: Props) {
           <button type="button" aria-label="Why am I seeing this?" title="Why am I seeing this?" onClick={() => setDrawer((v) => !v)}>ⓘ</button>
           <button type="button" aria-label="More" onClick={() => setMenu((v) => !v)}>⋯</button>
         </div>
-        <h3>{card.title}</h3>
-        <p>{card.body}</p>
+        <h3>{maskText(card.title, masked)}</h3>
+        <p>{maskText(card.body, masked)}</p>
         <div className="bottom">
           {card.eur_impact > 0 && <span className="impact">{eur(card.eur_impact)}{impactYearly ? "/yr" : ""}</span>}
           {card.due_date && (
@@ -64,6 +68,9 @@ export default function Card({ card, asOf, onFeedback, onCta }: Props) {
             </span>
           )}
           {card.commercial && <span className="commercial">offer</span>}
+          <button type="button" className="ask-kate" title="Ask Kate about this" onClick={() => onAskKate(card.card_key)}>
+            <span className="kate-dot" aria-hidden="true">K</span>Ask Kate
+          </button>
           {card.cta && (
             <button type="button" className="cta" onClick={() => onCta(card.cta!.action)}>{card.cta.label}</button>
           )}
