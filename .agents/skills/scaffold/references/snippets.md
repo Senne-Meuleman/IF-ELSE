@@ -18,7 +18,7 @@ from pydantic import BaseModel, ValidationError
 load_dotenv()
 BACKENDS = {
     "gemini": {"url": "https://generativelanguage.googleapis.com/v1beta/openai",
-               "key": os.getenv("GEMINI_API_KEY", ""), "model": os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+               "key": os.getenv("GEMINI_API_KEY", ""), "model": os.getenv("GEMINI_MODEL", "gemini-3.8-flash"),
                "embed": "gemini-embedding-001", "extra": {}},
     "ollama": {"url": os.getenv("OLLAMA_BASE_URL", "http://localhost:11434/v1"), "key": "ollama",
                "model": os.getenv("OLLAMA_MODEL", "qwen3.5:4b"), "embed": "bge-m3",

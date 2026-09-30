@@ -53,7 +53,7 @@ fraud, Peppol and AI Act facts for the pitch.
 
 ## Stack (decided on the day, defaults below)
 
-- **Default**: Python 3.12 + `uv` + Streamlit + Gemini (`gemini-2.5-flash` through
+- **Default**: Python 3.12 + `uv` + Streamlit + Gemini (`gemini-3.8-flash` through
   the OpenAI-compatible endpoint, so any model is one env var away). Fastest path
   from nothing to a clickable demo, and Google Cloud is a partner.
 - **Offline fallback** on Henri's laptop: Ollama with `qwen3.5:4b` (chat, weak at
