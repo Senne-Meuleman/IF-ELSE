@@ -2,7 +2,7 @@
 
     py -3.12 build.py
 
-Edit src/slides.html (content), src/theme.css (look), src/deck.js (demo + hook wall).
+Edit src/slides.html (content), src/theme.css (look), src/deck.js (phone wall).
 src/base.css and src/engine.js are the epic-pitch-deck engine; leave them alone.
 """
 import base64
