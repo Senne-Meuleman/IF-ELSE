@@ -1,0 +1,86 @@
+/* theme-kbc: KBC-track theme for Streamlit and plain HTML. Offline, no web fonts.
+   Inspired by the KBC look, no brand marks. Sources: ../research.md */
+:root {
+  --th-brand: #00AEEF;        /* verified (kbc.be CSS), decoration only */
+  --th-primary: #006A9E;      /* estimated, AA on white */
+  --th-primary-hover: #00557F;
+  --th-ink: #0D2A50;          /* seen on kbc.be */
+  --th-muted: #4A5B70;
+  --th-bg: #FFFFFF;
+  --th-surface: #F2F8FC;
+  --th-line: #D3E3EE;
+  --th-success: #80C342;      /* verified (kbc.be CSS), fill only */
+  --th-success-ink: #2E6B12;
+  --th-danger: #B3261E;
+  --th-font: "Museo Sans", "MuseoSans", "Segoe UI", system-ui, -apple-system, Roboto, sans-serif;
+  --th-radius: 5px;
+  --th-radius-pill: 30px;
+  --th-shadow: 0 4px 16px rgb(13 42 80 / .08);
+  --th-ease: cubic-bezier(.2, .7, .2, 1);
+  --th-dur: 220ms;
+}
+
+/* Base (Streamlit + HTML) */
+html, body, .stApp, [data-testid="stAppViewContainer"] { background: var(--th-bg); color: var(--th-ink); font-family: var(--th-font); }
+.stApp, .stMarkdown, .stMarkdown p, body { font-size: 18px; line-height: 1.5; }
+h1, h2, h3 { color: var(--th-ink); font-family: var(--th-font); font-weight: 700; letter-spacing: -.01em; }
+a { color: var(--th-primary); }
+[data-testid="stSidebar"] { background: var(--th-surface); border-right: 1px solid var(--th-line); }
+/* thin brand line on top: the "futuristic but calm" accent */
+.stApp::before { content: ""; position: fixed; inset: 0 0 auto 0; height: 4px; z-index: 1000;
+  background: linear-gradient(90deg, var(--th-ink), var(--th-primary) 50%, var(--th-brand)); }
+.stButton > button, .stDownloadButton > button { border-radius: var(--th-radius-pill); min-height: 44px; font-weight: 600; font-size: 17px;
+  transition: transform var(--th-dur) var(--th-ease), background-color var(--th-dur); }
+.stButton > button:hover { transform: translateY(-1px); }
+.stButton > button[kind="primary"] { background: var(--th-primary); border-color: var(--th-primary); color: #fff; }
+.stButton > button[kind="primary"]:hover { background: var(--th-primary-hover); }
+.stTabs [data-baseweb="tab"] { font-size: 17px; }
+.stTabs [aria-selected="true"] { color: var(--th-primary); }
+[data-testid="stMetricValue"] { color: var(--th-ink); font-size: 44px; font-weight: 700; }
+:focus-visible { outline: 3px solid var(--th-brand); outline-offset: 2px; }
+
+/* Components */
+.th-card { background: var(--th-bg); border: 1px solid var(--th-line); border-radius: var(--th-radius); box-shadow: var(--th-shadow); padding: 20px 24px; margin: 12px 0; }
+.th-card--surface { background: var(--th-surface); box-shadow: none; }
+.th-metric__value { font-size: 48px; font-weight: 700; color: var(--th-ink); line-height: 1.1; }
+.th-metric__label { font-size: 16px; color: var(--th-muted); }
+
+.th-btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 22px; border-radius: var(--th-radius-pill);
+  font: 600 17px var(--th-font); border: 2px solid var(--th-primary); background: var(--th-bg); color: var(--th-primary); cursor: pointer;
+  transition: transform var(--th-dur) var(--th-ease), background-color var(--th-dur); }
+.th-btn:hover { transform: translateY(-1px); }
+.th-btn--primary { background: var(--th-primary); color: #fff; }
+.th-btn--primary:hover { background: var(--th-primary-hover); }
+.th-btn--ghost { border-color: transparent; }
+.th-btn--danger { border-color: var(--th-danger); color: var(--th-danger); }
+
+.th-table { width: 100%; border-collapse: collapse; font-size: 16px; }
+.th-table th { text-align: left; color: var(--th-muted); font-weight: 600; border-bottom: 2px solid var(--th-line); padding: 10px 12px; }
+.th-table td { padding: 10px 12px; border-bottom: 1px solid var(--th-line); }
+.th-table tr:nth-child(even) td { background: var(--th-surface); }
+.th-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+
+.th-secure { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; color: var(--th-ink);
+  background: var(--th-surface); border: 1px solid var(--th-line); border-radius: var(--th-radius-pill); padding: 4px 12px; }
+.th-secure svg { color: var(--th-primary); flex: none; }
+
+.th-why { border-left: 3px solid var(--th-brand); background: var(--th-surface); border-radius: 0 var(--th-radius) var(--th-radius) 0; padding: 10px 16px; margin: 8px 0; }
+.th-why summary { cursor: pointer; font-weight: 600; color: var(--th-primary); font-size: 16px; }
+.th-why p, .th-why li { font-size: 16px; color: var(--th-ink); margin: 8px 0 0; }
+
+.th-approval { border: 2px solid var(--th-primary); border-radius: var(--th-radius); padding: 20px 24px; background: var(--th-bg); box-shadow: var(--th-shadow); }
+.th-approval__title { font-weight: 700; font-size: 20px; margin: 0 0 6px; }
+.th-approval__note { color: var(--th-muted); font-size: 16px; }
+.th-status--approved { color: var(--th-success-ink); font-weight: 700; }
+.th-status--rejected { color: var(--th-danger); font-weight: 700; }
+
+/* Motion: opacity/transform only. The final state is the default state. */
+@keyframes th-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes th-slide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+.th-fade-in { animation: th-fade var(--th-dur) var(--th-ease) both; }
+.th-slide-up, .th-approval, .th-why { animation: th-slide 260ms var(--th-ease) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
+}
+.th-lite *, .th-lite *::before, .th-lite *::after, html.th-lite, body.th-lite { animation: none !important; transition: none !important; }

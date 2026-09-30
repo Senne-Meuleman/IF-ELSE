@@ -1,0 +1,36 @@
+/* theme-kbc deck overrides. Paste inside the deck <style>, AFTER the template CSS.
+   Turns the dark epic-pitch-deck template into white and blue. Offline: no web fonts.
+   Also add before </body>:
+   <script>if(new URLSearchParams(location.search).get('lite')==='1'){document.documentElement.classList.add('th-lite','static')}</script>
+*/
+:root {
+  --bg: #FFFFFF;
+  --ink: #0D2A50;
+  --muted: #4A5B70;
+  --line: rgb(13 42 80 / .14);
+  --panel: #F2F8FC;
+  --accent: #006A9E;
+  --accent-2: #00AEEF;
+  --grad: linear-gradient(100deg, #0D2A50, #006A9E 55%, #00AEEF);
+  --display: "Museo Sans", "MuseoSans", "Segoe UI", system-ui, sans-serif;
+  --body: "Museo Sans", "MuseoSans", "Segoe UI", system-ui, sans-serif;
+  --hue: 200;
+}
+body { background: var(--bg); color: var(--ink); }
+.shine { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; animation: none; }
+.btn:hover { background: rgb(13 42 80 / .06); }
+.btn.primary { background: #006A9E; color: #fff; }
+.steps-list li.on::before { color: #fff; box-shadow: none; }
+.browser { box-shadow: 0 30px 80px -30px rgb(13 42 80 / .35), 0 0 0 1px rgb(13 42 80 / .12); }
+.banner { background: linear-gradient(110deg, #0D2A50, #006A9E); }
+.badge { background: #006A9E; }
+[class*="card"] { border-color: var(--line); }
+
+/* Transparency blocks on slides (same classes as the app) */
+.th-why { border-left: 4px solid #00AEEF; background: #F2F8FC; padding: 14px 20px; border-radius: 0 5px 5px 0; font-size: 22px; }
+.th-why summary { font-weight: 700; color: #006A9E; }
+.th-approval { border: 2px solid #006A9E; border-radius: 5px; padding: 22px 28px; background: #fff; }
+.th-secure { display: inline-flex; gap: 8px; align-items: center; font-size: 20px; color: #0D2A50; background: #F2F8FC; border: 1px solid #D3E3EE; border-radius: 30px; padding: 6px 16px; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+.th-lite *, .th-lite *::before, .th-lite *::after { animation: none !important; transition: none !important; }

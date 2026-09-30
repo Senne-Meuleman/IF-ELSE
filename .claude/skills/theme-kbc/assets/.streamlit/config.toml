@@ -1,0 +1,14 @@
+# theme-kbc: copy to <app>/.streamlit/config.toml. Values: ../../research.md
+[theme]
+base = "light"
+primaryColor = "#006A9E"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F2F8FC"
+textColor = "#0D2A50"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false

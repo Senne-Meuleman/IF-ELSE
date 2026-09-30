@@ -1,0 +1,14 @@
+# theme-sdworx: copy to <app>/.streamlit/config.toml. Values: ../../research.md
+[theme]
+base = "light"
+primaryColor = "#006DD8"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F4F5F6"
+textColor = "#212223"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false

@@ -1,0 +1,36 @@
+/* theme-sdworx deck overrides. Paste inside the deck <style>, AFTER the template CSS.
+   Turns the dark template into white, navy and SD Worx blue. Offline: no web fonts.
+   Also add before </body>:
+   <script>if(new URLSearchParams(location.search).get('lite')==='1'){document.documentElement.classList.add('th-lite','static')}</script>
+*/
+:root {
+  --bg: #FFFFFF;
+  --ink: #000D3A;
+  --muted: #444547;
+  --line: rgb(0 13 58 / .14);
+  --panel: #F4F5F6;
+  --accent: #006DD8;
+  --accent-2: #0087F3;
+  --grad: linear-gradient(100deg, #000D3A, #006DD8 60%, #0087F3);
+  --display: Inter, "Segoe UI", system-ui, sans-serif;
+  --body: Inter, "Segoe UI", system-ui, sans-serif;
+  --hue: 212;
+}
+body { background: var(--bg); color: var(--ink); }
+.shine { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; animation: none; }
+.btn:hover { background: rgb(0 13 58 / .06); }
+.btn.primary { background: #006DD8; color: #fff; }
+.steps-list li.on::before { color: #fff; box-shadow: none; }
+.browser { box-shadow: 0 30px 80px -30px rgb(0 13 58 / .35), 0 0 0 1px rgb(0 13 58 / .12); }
+.banner { background: linear-gradient(110deg, #000D3A, #006DD8); }
+.badge { background: #006DD8; }
+[class*="card"] { border-color: var(--line); }
+
+/* Transparency blocks on slides (same classes as the app) */
+.th-why { border-left: 4px solid #006DD8; background: #EFFAFF; padding: 14px 20px; border-radius: 0 8px 8px 0; font-size: 22px; }
+.th-why summary { font-weight: 700; color: #006DD8; }
+.th-approval { border: 2px solid #006DD8; border-radius: 8px; padding: 22px 28px; background: #fff; }
+.th-secure { display: inline-flex; gap: 8px; align-items: center; font-size: 20px; color: #212223; background: #F4F5F6; border: 1px solid #D9DBDD; border-radius: 4px; padding: 6px 16px; }
+
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+.th-lite *, .th-lite *::before, .th-lite *::after { animation: none !important; transition: none !important; }
