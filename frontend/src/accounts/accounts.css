@@ -102,6 +102,7 @@
 .zb-txn .tm small { font-size: .7em; color: var(--muted); }
 .zb-txn .ta { font-size: .9em; font-weight: 800; white-space: nowrap; letter-spacing: -0.01em; }
 .zb-txn.in .ta { color: #15803d; }
+.phone.dark .zb-stat.in b, .phone.dark .zb-txn.in .ta { color: #4ade80; }
 
 /* the rest of the screen */
 .zoom-layer .zb-body {
