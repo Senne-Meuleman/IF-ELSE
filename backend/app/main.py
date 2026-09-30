@@ -20,10 +20,12 @@ from fastapi.staticfiles import StaticFiles
 from . import auth, db
 from .auth import Principal
 from .customer_state.api import router as customer_state_router
+from .customer_state.service import get_state
 from .engine import kate, pipeline
 from .engine.persona import dominant
+from .recommender.feed import recommend
 from .schemas import (
-    HERO_COMPONENTS, AdvisorOverview, ConsentRequest, DeclareRequest, FeedbackRequest, HomeResponse, KateReply,
+    HERO_COMPONENTS, AdvisorOverview, ConsentRequest, DeclareRequest, FeedbackRequest, FeedPersona, HomeResponse, KateReply,
     KateRequest, LayoutPrefRequest, LoginRequest, LoginResponse, StylePrefs, SuggestionRequest, TimelineResponse,
 )
 
@@ -102,6 +104,9 @@ def _load_and_build(customer_id: int, as_of: dt.date | None, touch: bool = True)
         home, features = pipeline.build_home_with_features(customer, txs, balance_today, prefs, effective)
         if touch:
             db.touch_visit(conn, customer_id, effective)
+        state = get_state(conn, customer_id, effective, balance_reference=DEMO_TODAY)
+        home.feed, personas = recommend(customer, state, prefs)
+        home.feed_personas = [FeedPersona.model_validate(persona) for persona in personas]
     return home, features
 
 
@@ -313,12 +318,13 @@ def advisor_overview(user: Principal = Depends(auth.require_advisor)) -> Advisor
 # Static frontend (production build), if present
 # ----------------------------------------------------------------------------------
 
-if os.path.isdir(FRONTEND_DIST):
+if (os.path.isfile(os.path.join(FRONTEND_DIST, "index.html"))
+        and os.path.isdir(os.path.join(FRONTEND_DIST, "assets"))):
     app.mount("/assets", StaticFiles(directory=os.path.join(FRONTEND_DIST, "assets")), name="assets")
 
     @app.get("/{path:path}", include_in_schema=False)
     def spa(path: str):
         candidate = os.path.abspath(os.path.join(FRONTEND_DIST, path))
-        if path and candidate.startswith(FRONTEND_DIST) and os.path.isfile(candidate):
+        if path and os.path.commonpath((FRONTEND_DIST, candidate)) == FRONTEND_DIST and os.path.isfile(candidate):
             return FileResponse(candidate)
         return FileResponse(os.path.join(FRONTEND_DIST, "index.html"))

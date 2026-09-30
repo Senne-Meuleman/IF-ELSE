@@ -54,6 +54,12 @@ export const PERSONA_LABEL: Record<string, string> = {
   retiree: "retiree",
 };
 
+export const FEED_PERSONA_LABEL: Record<string, string> = {
+  TEEN: "youth", STU: "student", YPRO: "young professional", PAR: "parent",
+  HOME: "household", SELF: "self-employed", INV: "investor",
+  PRE: "pre-retirement", SEN: "retiree",
+};
+
 export const CATEGORY_LABEL: Record<string, string> = {
   salary: "Salary", invoice_income: "Invoices", pension: "Pension", student_income: "Student job",
   allowance_from_parents: "Allowance", child_benefit: "Child benefit", benefit: "Benefit",

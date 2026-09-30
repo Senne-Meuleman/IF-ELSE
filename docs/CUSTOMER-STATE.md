@@ -4,9 +4,9 @@ Customer State is a backend banking-data foundation, separate from the existing 
 It describes observations, calculations, supported patterns, historical changes and uncertain financial
 inferences. Nothing in `backend/app/customer_state/` imports `app.engine`, ranks content, or chooses UI.
 
-**Frontend content and the recommendation engine are intentionally outside the scope of this
-implementation and will be built later by combining content definitions with Customer State.**
-The pre-existing home engine is unchanged and does not yet consume this new capability.
+The home feed now consumes this capability through `backend/app/recommender/`. Customer State remains independent:
+it does not import the recommendation engine or choose UI. The existing layout planner still uses its original
+feature pipeline.
 
 ## Architecture
 

@@ -101,12 +101,34 @@ def test_feedback_changes_feed(client):
     assert any(c["card_key"] == first["card_key"] for c in reset["feed"]["cards"])
 
 
+def test_home_feed_uses_customer_state_and_catalogue(client):
+    client.cookies.clear()
+    _login(client, "sara")
+    home = client.get("/api/me/home").json()
+    assert {p["code"] for p in home["feed_personas"]} >= {"PAR", "SELF"}
+    assert any(c["card_type"] == "core_money" for c in home["feed"]["cards"])
+    assert any(c["card_type"].startswith("catalog_") for c in home["feed"]["cards"])
+    assert all(c["details"].get("related_cards") is not None for c in home["feed"]["cards"])
+
+
+def test_feed_personas_follow_history_without_future_products(client):
+    client.cookies.clear()
+    _login(client, "lotte")
+    student = client.get("/api/me/home?as_of=2018-09-30").json()
+    freelancer = client.get("/api/me/home?as_of=2026-09-30").json()
+    assert student["feed_personas"][0]["code"] == "STU"
+    assert freelancer["feed_personas"][0]["code"] == "SELF"
+    assert "STU" not in {p["code"] for p in freelancer["feed_personas"]}
+
+
 def test_feedback_validation(client):
     client.cookies.clear()
     _login(client, "sara")
     r = client.post("/api/me/feedback", json={"card_key": "<script>", "card_type": "runway", "decision": "dismiss"})
     assert r.status_code == 422
     r = client.post("/api/me/feedback", json={"card_key": "x", "card_type": "runway", "decision": "delete_all"})
+    assert r.status_code == 422
+    r = client.post("/api/me/feedback", json={"card_key": "x", "card_type": "not_a_card", "decision": "dismiss"})
     assert r.status_code == 422
 
 
