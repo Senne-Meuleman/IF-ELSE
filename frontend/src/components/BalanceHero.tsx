@@ -1,4 +1,4 @@
-import { eur } from "../format";
+import { useEur } from "../privacy";
 import { arr, num, type SectionProps } from "./types";
 
 function Sparkline({ values }: { values: number[] }) {
@@ -21,6 +21,7 @@ function Sparkline({ values }: { values: number[] }) {
 }
 
 export default function BalanceHero({ props }: SectionProps) {
+  const eur = useEur();
   const balance = num(props.balance_eur);
   const income = num(props.monthly_income_eur);
   const spend = num(props.monthly_spend_eur);

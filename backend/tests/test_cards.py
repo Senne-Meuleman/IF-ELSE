@@ -170,3 +170,102 @@ def test_insurance_card_from_a_single_payment_and_no_utility_price_cards():
     cards = cards_for(customer(), b.txs, 1000, END, {"insurance_renewal", "price_increase"})
     assert [k.card_type for k in cards] == ["insurance_renewal"]
     assert cards[0].stage == "soon" and any("€735,62 to Baloise on 14 Oct 2025" in e for e in cards[0].evidence)
+
+
+# ---- pension_savings / late_client / protection_gap / new_payee ---------------------------------------------
+
+
+def salaried(start=D(2025, 1, 1)):
+    b = TxBuilder()
+    baseline(b, start, END)
+    b.monthly(start, END, 2600, "salary", "Acme NV", day=25)
+    return b
+
+
+def test_pension_savings_season_age_and_existing_deposit():
+    b = salaried()
+    card = cards_for(customer(birth_year=1990), b.txs, 3000, END, {"pension_savings"})[0]
+    assert card.commercial and card.family == "opportunity" and card.due_date == D(2026, 12, 31)
+    assert card.stage == "early" and card.eur_impact == 315 and "up to" in card.title
+    assert "tax reduction" in card.body and "depends on your tax situation" in card.body
+    assert card.cta.action == "open_pension_savings" and card.card_key == "pension_savings:2026"
+    assert cards_for(customer(birth_year=1990), b.txs, 3000, D(2026, 8, 31), {"pension_savings"}) == []   # not in season
+    assert cards_for(customer(birth_year=1958), b.txs, 3000, END, {"pension_savings"}) == []             # 68: too old
+    assert cards_for(customer(birth_year=1990), b.txs, 300, END, {"pension_savings"}) == []              # no room for it
+    b.add(D(2026, 3, 1), -1050, "savings_transfer", "KBC Pensioensparen")
+    assert cards_for(customer(birth_year=1990), b.txs, 3000, END, {"pension_savings"}) == []
+
+
+def freelancer_with_retainer(stop: dt.date):
+    b = TxBuilder()
+    baseline(b, D(2025, 1, 1), END)
+    b.monthly(D(2025, 1, 1), stop, 650, "invoice_income", "Brouwerij Het Anker", day=24)
+    b.monthly(D(2025, 1, 1), END, 1800, "invoice_income", "Studio Nord", day=10)
+    return b
+
+
+def test_late_client_fires_for_a_steady_payer_who_stopped():
+    b = freelancer_with_retainer(stop=D(2026, 6, 30))
+    cards = cards_for(customer(), b.txs, 3000, END, {"late_client"})
+    assert len(cards) == 1
+    card = cards[0]
+    assert card.title.startswith("Brouwerij Het Anker usually pays every ~")
+    assert "98 days ago" in card.title and card.eur_impact == 650
+    assert not card.commercial and card.family == "anomaly" and card.cta.action == "invoice_reminder"
+    # still paying → nothing; a fortnight past the usual date is not "late" yet
+    assert cards_for(customer(), freelancer_with_retainer(END).txs, 3000, END, {"late_client"}) == []
+    assert cards_for(customer(), b.txs, 3000, D(2026, 7, 31), {"late_client"}) == []
+
+
+def test_late_client_ignores_irregular_payers():
+    b = TxBuilder()
+    baseline(b, D(2025, 1, 1), END)
+    for d in [D(2025, 1, 5), D(2025, 1, 20), D(2025, 6, 2), D(2025, 6, 20), D(2025, 12, 1), D(2026, 1, 3)]:
+        b.add(d, 900, "invoice_income", "Vzw De Kring")
+    assert cards_for(customer(), b.txs, 3000, END, {"late_client"}) == []
+
+
+def test_protection_gap_child_without_family_insurance():
+    b = salaried()
+    b.monthly(D(2026, 3, 8), END, 178, "child_benefit", "Groeipakket", day=8)
+    card = cards_for(customer(), b.txs, 3000, END, {"protection_gap"})[0]
+    assert card.commercial and card.family == "protection" and card.eur_impact == 0
+    assert "€" not in card.body and card.details["typically_covers"]   # a check, no invented prices
+    assert card.cta.action == "open_family_insurance"
+    b.add(D(2025, 10, 1), -96, "insurance_family", "KBC Verzekeringen")
+    assert cards_for(customer(), b.txs, 3000, END, {"protection_gap"}) == []
+    assert cards_for(customer(), salaried().txs, 3000, END, {"protection_gap"}) == []   # no child signals
+
+
+def test_new_payee_first_large_payment():
+    b = salaried()
+    b.add(D(2026, 9, 28), -1250, "other", "Tech Support Services BV")
+    card = cards_for(customer(birth_year=1955), b.txs, 3000, END, {"new_payee"})[0]
+    assert card.stage == "urgent" and not card.commercial and card.family == "protection"
+    assert card.title == "First payment of €1.250 to Tech Support Services BV. Was this you?"
+    assert card.eur_impact == 1250 and any("Scammers" in e for e in card.evidence)
+    assert card.cta.action == "confirm_payee" and re.match(CARD_KEY_PATTERN, card.card_key)
+    assert cards_for(customer(), b.txs, 3000, D(2026, 10, 2), {"new_payee"})[0].stage == "soon"
+    assert cards_for(customer(), b.txs, 3000, D(2026, 10, 6), {"new_payee"}) == []    # outside the 7-day window
+
+
+def test_new_payee_skips_known_small_and_expected_payments():
+    b = salaried()
+    b.add(D(2026, 9, 28), -800, "leisure", "Cinema Kinepolis")         # known counterparty
+    b.add(D(2026, 9, 28), -120, "other", "Hema")                       # small
+    b.add(D(2026, 9, 28), -2400, "notary", "Notaris Claes")             # expected life admin
+    b.add(D(2026, 9, 28), -900, "savings_transfer", "KBC Spaarrekening")
+    assert cards_for(customer(), b.txs, 3000, END, {"new_payee"}) == []
+    # no history yet → every payee is new, so say nothing
+    fresh = TxBuilder().add(D(2026, 9, 1), 2000, "salary", "Acme NV").add(D(2026, 9, 28), -900, "other", "Fresh BV")
+    assert cards_for(customer(), fresh.txs, 3000, END, {"new_payee"}) == []
+
+
+def test_counterparty_names_are_sanitised_in_titles():
+    b = salaried()
+    evil = "Evil\u202e Corp\n" + "X" * 60
+    b.add(D(2026, 9, 29), -999, "other", evil)
+    card = cards_for(customer(), b.txs, 3000, END, {"new_payee"})[0]
+    assert "\n" not in card.title and "\u202e" not in card.title
+    name = card.title.split(" to ", 1)[1].split(". Was this you?")[0]
+    assert len(name) <= 40 and name.startswith("Evil Corp")

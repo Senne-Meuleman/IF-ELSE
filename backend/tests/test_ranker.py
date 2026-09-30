@@ -91,3 +91,23 @@ def test_novelty_uses_last_visit():
     seen = score_card(card("price_increase:x"), MIX, Prefs(last_visit=AS_OF), AS_OF)
     fresh2 = score_card(card("price_increase:x"), MIX, Prefs(last_visit=None), AS_OF)
     assert fresh > 0 and seen < fresh2
+
+
+def test_affinity_covers_every_card_type_and_new_payee_leads_for_retirees():
+    from app.engine.ranker import AFFINITY
+    from app.schemas import CARD_TYPES, PERSONAS
+    assert set(AFFINITY) == set(CARD_TYPES)
+    assert all(0 <= AFFINITY[t][p] <= 1 for t in CARD_TYPES for p in PERSONAS)
+    retiree = [PersonaWeight(persona="retiree", weight=1.0, evidence=[])]
+    cards = [card("duplicate_charge:colruyt", "duplicate_charge", eur=64),
+             card("idle_cash:savings", "idle_cash", "opportunity", eur=100, commercial=True),
+             card("scam_awareness:w", "scam_awareness", "protection", eur=0, conf=0.75),
+             card("new_payee:tech-support", "new_payee", "protection", "urgent", eur=1250, conf=0.7),
+             card("pension_savings:2026", "pension_savings", "opportunity", "early", eur=315, commercial=True,
+                  due=D(2026, 12, 31), conf=0.5)]
+    feed = rank(cards, retiree, Prefs(), customer(), AS_OF)
+    keys = [c.card_key for c in feed.cards]
+    assert keys[0] == "new_payee:tech-support"
+    assert keys.index("idle_cash:savings") < keys.index("pension_savings:2026")   # low fit for retirees
+    for n in range(1, len(feed.cards) + 1):
+        assert sum(1 for c in feed.cards[:n] if c.commercial) <= -(-n // 3)

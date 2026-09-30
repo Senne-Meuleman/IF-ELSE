@@ -10,6 +10,7 @@ from __future__ import annotations
 import datetime as dt
 import os
 import time
+from collections import defaultdict, deque
 from contextlib import asynccontextmanager
 
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
@@ -18,11 +19,11 @@ from fastapi.staticfiles import StaticFiles
 
 from . import auth, db
 from .auth import Principal
-from .engine import pipeline
+from .engine import kate, pipeline
 from .engine.persona import dominant
 from .schemas import (
-    AdvisorOverview, ConsentRequest, FeedbackRequest, HomeResponse, LayoutPrefRequest,
-    LoginRequest, LoginResponse, TimelineResponse,
+    HERO_COMPONENTS, AdvisorOverview, ConsentRequest, DeclareRequest, FeedbackRequest, HomeResponse, KateReply,
+    KateRequest, LayoutPrefRequest, LoginRequest, LoginResponse, StylePrefs, SuggestionRequest, TimelineResponse,
 )
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -31,6 +32,7 @@ SYNTH_N = int(os.environ.get("SYNTH_N", "1000"))
 SYNTH_SEED = int(os.environ.get("SYNTH_SEED", "42"))
 COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "0") == "1"
 PORTFOLIO_SIZE = 2_300_000
+KATE_MAX_PER_MINUTE = 30
 # The synthetic dataset's reference "today". Time travel is clamped to [first transaction, DEMO_TODAY].
 DEMO_TODAY = dt.date.fromisoformat(os.environ.get("DEMO_TODAY", "2026-09-30"))
 
@@ -46,6 +48,8 @@ def ensure_db() -> None:
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     ensure_db()
+    with db.tx() as conn:
+        db.init_schema(conn)  # idempotent; migrates databases built by older versions
     yield
 
 
@@ -83,7 +87,7 @@ def _effective_as_of(conn, customer_id: int, as_of: dt.date | None) -> dt.date:
     return hi if as_of is None else min(max(as_of, lo), hi)
 
 
-def _load_and_build(customer_id: int, as_of: dt.date | None) -> HomeResponse:
+def _load_and_build(customer_id: int, as_of: dt.date | None, touch: bool = True):
     with db.tx() as conn:
         customer = db.get_customer(conn, customer_id)
         if not customer:
@@ -92,9 +96,33 @@ def _load_and_build(customer_id: int, as_of: dt.date | None) -> HomeResponse:
         txs = db.get_transactions(conn, customer_id)
         balance_today = db.get_balance_today(conn, customer_id)
         prefs = db.get_prefs(conn, customer_id)
-        home = pipeline.build_home(customer, txs, balance_today, prefs, effective)
-        db.touch_visit(conn, customer_id, effective)
-    return home
+        home, features = pipeline.build_home_with_features(customer, txs, balance_today, prefs, effective)
+        if touch:
+            db.touch_visit(conn, customer_id, effective)
+    return home, features
+
+
+def _home(customer_id: int, as_of: dt.date | None) -> HomeResponse:
+    return _load_and_build(customer_id, as_of)[0]
+
+
+def _pin(conn, customer_id: int, component: str, at: dt.date, position: int | None) -> None:
+    if component in HERO_COMPONENTS:
+        db.unpin_heroes(conn, customer_id, HERO_COMPONENTS)  # one main tile at a time
+    db.set_layout_pref(conn, customer_id, component, "pinned", at, position)
+
+
+_kate_calls: dict[int, deque] = defaultdict(deque)
+
+
+def _kate_rate_limit(user_id: int) -> None:
+    now = time.time()
+    q = _kate_calls[user_id]
+    while q and q[0] < now - 60:
+        q.popleft()
+    if len(q) >= KATE_MAX_PER_MINUTE:
+        raise HTTPException(status_code=429, detail="Kate needs a breather, try again in a minute")
+    q.append(now)
 
 
 def _as_of_param(as_of: dt.date | None = Query(default=None)) -> dt.date | None:
@@ -140,7 +168,7 @@ def session(user: Principal = Depends(auth.current_user)) -> LoginResponse:
 @app.get("/api/me/home", response_model=HomeResponse)
 def me_home(as_of: dt.date | None = Depends(_as_of_param),
             user: Principal = Depends(auth.require_customer)) -> HomeResponse:
-    return _load_and_build(user.customer_id, as_of)
+    return _home(user.customer_id, as_of)
 
 
 @app.get("/api/me/timeline", response_model=TimelineResponse)
@@ -162,7 +190,7 @@ def me_feedback(body: FeedbackRequest, as_of: dt.date | None = Depends(_as_of_pa
     with db.tx() as conn:
         at = _effective_as_of(conn, user.customer_id, as_of)
         db.add_feedback(conn, user.customer_id, body.card_key, body.card_type, body.decision, at)
-    return _load_and_build(user.customer_id, as_of)
+    return _home(user.customer_id, as_of)
 
 
 @app.post("/api/me/layout-prefs", response_model=HomeResponse)
@@ -170,8 +198,57 @@ def me_layout_prefs(body: LayoutPrefRequest, as_of: dt.date | None = Depends(_as
                     user: Principal = Depends(auth.require_customer)) -> HomeResponse:
     with db.tx() as conn:
         at = _effective_as_of(conn, user.customer_id, as_of)
-        db.set_layout_pref(conn, user.customer_id, body.component, body.state, at)
-    return _load_and_build(user.customer_id, as_of)
+        if body.state == "pinned":
+            _pin(conn, user.customer_id, body.component, at, body.position)
+        else:
+            db.set_layout_pref(conn, user.customer_id, body.component, body.state, at)
+    return _home(user.customer_id, as_of)
+
+
+@app.post("/api/me/layout-reset", response_model=HomeResponse)
+def me_layout_reset(as_of: dt.date | None = Depends(_as_of_param),
+                    user: Principal = Depends(auth.require_customer)) -> HomeResponse:
+    with db.tx() as conn:
+        db.reset_layout(conn, user.customer_id)
+    return _home(user.customer_id, as_of)
+
+
+@app.post("/api/me/style", response_model=HomeResponse)
+def me_style(body: StylePrefs, as_of: dt.date | None = Depends(_as_of_param),
+             user: Principal = Depends(auth.require_customer)) -> HomeResponse:
+    with db.tx() as conn:
+        db.set_style(conn, user.customer_id, body)
+    return _home(user.customer_id, as_of)
+
+
+@app.post("/api/me/suggestion", response_model=HomeResponse)
+def me_suggestion(body: SuggestionRequest, as_of: dt.date | None = Depends(_as_of_param),
+                  user: Principal = Depends(auth.require_customer)) -> HomeResponse:
+    with db.tx() as conn:
+        at = _effective_as_of(conn, user.customer_id, as_of)
+        if body.decision == "accept":
+            _pin(conn, user.customer_id, body.component, at, None)
+        else:
+            db.dismiss_suggestion(conn, user.customer_id, body.component, at)
+    return _home(user.customer_id, as_of)
+
+
+@app.post("/api/me/declare", response_model=HomeResponse)
+def me_declare(body: DeclareRequest, as_of: dt.date | None = Depends(_as_of_param),
+               user: Principal = Depends(auth.require_customer)) -> HomeResponse:
+    with db.tx() as conn:
+        at = _effective_as_of(conn, user.customer_id, as_of)
+        db.set_declared(conn, user.customer_id, body.signal, body.state, at)
+        db.audit(conn, user.user_id, f"declare.{body.state}", body.signal)
+    return _home(user.customer_id, as_of)
+
+
+@app.post("/api/me/kate", response_model=KateReply)
+def me_kate(body: KateRequest, as_of: dt.date | None = Depends(_as_of_param),
+            user: Principal = Depends(auth.require_customer)) -> KateReply:
+    _kate_rate_limit(user.user_id)
+    home, features = _load_and_build(user.customer_id, as_of, touch=False)
+    return kate.reply(home, features, body)
 
 
 @app.post("/api/me/consent", response_model=HomeResponse)
@@ -179,7 +256,7 @@ def me_consent(body: ConsentRequest, as_of: dt.date | None = Depends(_as_of_para
                user: Principal = Depends(auth.require_customer)) -> HomeResponse:
     with db.tx() as conn:
         db.set_consent(conn, user.customer_id, body.consent_personalization)
-    return _load_and_build(user.customer_id, as_of)
+    return _home(user.customer_id, as_of)
 
 
 # ----------------------------------------------------------------------------------

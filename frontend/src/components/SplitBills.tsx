@@ -1,9 +1,11 @@
-import { eur, shortDate } from "../format";
+import { shortDate } from "../format";
+import { useEur } from "../privacy";
 import { arr, str, type SectionProps } from "./types";
 
 interface Recent { counterparty: string; amount_eur: number; date: string }
 
 export default function SplitBills({ props, ctx }: SectionProps) {
+  const eur = useEur();
   const recent = arr<Recent>(props.recent).slice(0, 3);
   const hint = str(props.hint);
   return (

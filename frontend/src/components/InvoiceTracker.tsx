@@ -1,9 +1,11 @@
-import { eur, shortDate } from "../format";
+import { shortDate } from "../format";
+import { useEur } from "../privacy";
 import { arr, num, type SectionProps } from "./types";
 
 interface Client { name: string; eur: number; last_date: string }
 
 export default function InvoiceTracker({ props }: SectionProps) {
+  const eur = useEur();
   const unpaid = num(props.unpaid);
   const unpaidEur = num(props.unpaid_eur);
   const paidQ = num(props.paid_quarter_eur);

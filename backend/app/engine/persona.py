@@ -1,7 +1,7 @@
 """Features → persona mix (weights, not a label). Every weight carries plain-English evidence."""
 from __future__ import annotations
 
-from ..schemas import PERSONAS, Features, Persona, PersonaWeight
+from ..schemas import PERSONAS, DeclaredSignalRow, Features, Persona, PersonaWeight
 from .features import fmt_date, fmt_eur
 
 # ---- tuning knobs -----------------------------------------------------------------
@@ -28,6 +28,19 @@ SCORE = {                         # raw-score contributions, capped at 1.0 per p
     "freelancer_share": 0.6,       # × invoice share of income over 180 days
     "retiree_pension": 0.8,
     "retiree_age": 0.5,
+    "declared": 0.6,               # the customer told Kate (e.g. "we're expecting"): strong, but not absolute
+}
+DECLARED_PERSONA: dict[str, Persona] = {
+    "expecting_baby": "young_family",
+    "going_freelance": "freelancer",
+    "retiring": "retiree",
+    "studying": "student",
+}
+DECLARED_PHRASE = {
+    "expecting_baby": "you're expecting a baby",
+    "going_freelance": "you're going freelance",
+    "retiring": "you're retiring",
+    "studying": "you're studying",
 }
 
 
@@ -137,8 +150,23 @@ _SCORERS = {
 }
 
 
-def infer_persona_mix(features: Features) -> list[PersonaWeight]:
+def _apply_declared(raw: dict[str, tuple[float, list[str]]], declared: list[DeclaredSignalRow],
+                    as_of) -> dict[str, tuple[float, list[str]]]:
+    """Things the customer told Kate count as signals too, from the day they said it (time travel respects it)."""
+    out = dict(raw)
+    for d in declared:
+        if d.created_at > as_of:
+            continue
+        p = DECLARED_PERSONA[d.signal]
+        s, ev = out[p]
+        out[p] = (s + SCORE["declared"], [f"You told Kate on {fmt_date(d.created_at)} that {DECLARED_PHRASE[d.signal]}"] + ev)
+    return out
+
+
+def infer_persona_mix(features: Features, declared: list[DeclaredSignalRow] | None = None) -> list[PersonaWeight]:
     raw: dict[str, tuple[float, list[str]]] = {p: _SCORERS[p](features) for p in PERSONAS}
+    if declared:
+        raw = _apply_declared(raw, declared, features.as_of)
     total = sum(s for s, _ in raw.values())
     if total <= 0:
         return [PersonaWeight(persona="young_professional", weight=1.0,

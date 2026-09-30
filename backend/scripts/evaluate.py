@@ -26,6 +26,8 @@ EVENT_TO_CARD = {
     "cashflow_squeeze": {"cashflow_squeeze", "runway"},
     "idle_cash": {"idle_cash"},
 }
+NEUTRAL_CARD_TYPES = {"life_event", "scam_awareness", "vat_reserve",  # no injected ground truth: not scored
+                      "pension_savings", "late_client", "protection_gap", "new_payee"}
 PERSONA_SCENARIOS = {"student", "young_professional", "young_family", "freelancer", "retiree"}
 PORTFOLIO = 2_300_000
 
@@ -71,6 +73,7 @@ def main() -> None:
     n = 0
     started = time.perf_counter()
     with db.tx(args.db) as conn:
+        db.init_schema(conn)  # migrate databases built by older versions
         for cid in db.all_customer_ids(conn):
             customer = db.get_customer(conn, cid)
             txs = db.get_transactions(conn, cid)
@@ -98,7 +101,7 @@ def main() -> None:
                 card_tp += hit
                 card_fn += not hit
             for t in shown:
-                if t in {"life_event", "scam_awareness", "vat_reserve"}:
+                if t in NEUTRAL_CARD_TYPES:
                     continue  # not part of injected scenarios; neither right nor wrong
                 if t not in expected_types:
                     card_fp += 1

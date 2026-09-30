@@ -1,7 +1,9 @@
-import { eur, longDate, shortDate } from "../format";
+import { longDate, shortDate } from "../format";
+import { useEur } from "../privacy";
 import { num, str, type SectionProps } from "./types";
 
 export default function PensionHero({ props }: SectionProps) {
+  const eur = useEur();
   const balance = num(props.balance_eur);
   const pension = num(props.pension_eur);
   const received = str(props.pension_received_date as string | null, "") || null;

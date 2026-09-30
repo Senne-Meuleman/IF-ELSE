@@ -5,16 +5,16 @@
 .phone { isolation: isolate; }
 
 /* --- the tile on the home screen ---------------------------------------------------- */
-.section.hero.tappable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
-.section.hero.tappable:active { filter: brightness(.97); }
-.section.hero.tappable:focus-visible { outline: 3px solid rgba(255, 255, 255, .9); outline-offset: -6px; }
-.section.hero.tile-hidden { visibility: hidden; }
+.section.s-hero.tappable { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.section.s-hero.tappable:active { filter: brightness(.97); }
+.section.s-hero.tappable:focus-visible { outline: 3px solid var(--primary); outline-offset: 2px; border-radius: calc(var(--radius) + 4px); }
+.section.s-hero.tile-hidden { visibility: hidden; }
 
-.section.hero .hero-chevron {
+.section.s-hero .hero-chevron {
   position: absolute; top: 12px; right: 12px; z-index: 2; width: 28px; height: 28px; border-radius: 50%;
   display: grid; place-items: center; color: #fff; background: rgba(255, 255, 255, .22); pointer-events: none;
 }
-.section.hero .hero-chevron::before {
+.section.s-hero .hero-chevron::before {
   content: ""; position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .6);
   animation: hero-chevron-pulse 2.4s ease-out infinite;
 }
@@ -23,7 +23,7 @@
   70%, 100% { transform: scale(1.7); opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .section.hero .hero-chevron::before { animation: none; }
+  .section.s-hero .hero-chevron::before { animation: none; }
 }
 
 /* --- the zoom ---------------------------------------------------------------------- */
@@ -41,7 +41,8 @@
 .zoom-layer .zb-flyer { z-index: 3; }
 
 /* first frame: the tile exactly as it was on the home screen */
-.zoom-box .zb-tile.hero { position: absolute; top: 0; left: 0; border-radius: 0; box-shadow: none; }
+.zoom-box .zb-tile { position: absolute; top: 0; left: 0; }
+.zoom-box .zb-tile > .hero { height: 100%; border-radius: 0; box-shadow: none; }
 
 /* last frame: the big blue account tile */
 .zoom-box .zb-acct.hero {

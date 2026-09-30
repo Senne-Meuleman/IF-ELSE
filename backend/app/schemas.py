@@ -37,6 +37,7 @@ Stage = Literal["early", "soon", "urgent", "info"]
 CardType = Literal[
     "insurance_renewal", "vat_reserve", "price_increase", "duplicate_charge",
     "runway", "cashflow_squeeze", "idle_cash", "life_event", "scam_awareness",
+    "pension_savings", "late_client", "protection_gap", "new_payee",
 ]
 CARD_TYPES: tuple[str, ...] = CardType.__args__  # type: ignore[attr-defined]
 
@@ -47,6 +48,7 @@ Component = Literal[
     "BalanceHero", "RunwayHero", "FamilyBudgetHero", "TaxReserveHero", "PensionHero",
     "ForYouFeed", "QuickActions", "UpcomingBills", "SplitBills", "InvoiceTracker",
     "SavingsGoal", "ScamShield", "AdvisorContact", "SpendingByCategory",
+    "KateTile", "SubscriptionsTile",
 ]
 COMPONENTS: tuple[str, ...] = Component.__args__  # type: ignore[attr-defined]
 HERO_COMPONENTS: tuple[str, ...] = ("BalanceHero", "RunwayHero", "FamilyBudgetHero", "TaxReserveHero", "PensionHero")
@@ -55,6 +57,11 @@ Density = Literal["compact", "comfortable", "large"]
 Tone = Literal["casual", "neutral", "warm", "business", "formal"]
 Contrast = Literal["normal", "high"]
 Size = Literal["hero", "full", "half"]
+Appearance = Literal["light", "dark"]
+Accent = Literal["blue", "teal", "purple", "amber", "navy"]
+
+# Things a customer can tell Kate about themselves. Each maps to one persona (persona.py).
+DeclaredSignal = Literal["expecting_baby", "going_freelance", "retiring", "studying"]
 
 CARD_KEY_PATTERN = r"^[a-z0-9_:\-]{1,80}$"
 
@@ -94,6 +101,28 @@ class FeedbackRow(BaseModel):
 class LayoutPrefRow(BaseModel):
     component: Component
     state: Literal["pinned", "hidden"]
+    position: int | None = None     # pinned only: slot index among the non-hero sections below the feed
+
+
+class StylePrefs(BaseModel):
+    """Customer overrides on the adaptive theme. None = "Auto" (the engine decides)."""
+    density: Density | None = None
+    contrast: Contrast | None = None
+    tone: Tone | None = None
+    appearance: Appearance | None = None
+    accent: Accent | None = None
+    reduce_motion: bool = False
+    privacy: bool = False           # mask amounts until tapped
+
+
+class DeclaredSignalRow(BaseModel):
+    signal: DeclaredSignal
+    created_at: dt.date
+
+
+class SuggestionDismissal(BaseModel):
+    component: Component
+    created_at: dt.date
 
 
 class Prefs(BaseModel):
@@ -101,6 +130,9 @@ class Prefs(BaseModel):
     feedback: list[FeedbackRow] = Field(default_factory=list)
     layout_prefs: list[LayoutPrefRow] = Field(default_factory=list)
     last_visit: dt.date | None = None
+    style: StylePrefs = Field(default_factory=StylePrefs)
+    declared: list[DeclaredSignalRow] = Field(default_factory=list)
+    dismissed_suggestions: list[SuggestionDismissal] = Field(default_factory=list)
 
 
 # ----------------------------------------------------------------------------------
@@ -213,12 +245,18 @@ class Theme(BaseModel):
     density: Density
     tone: Tone
     contrast: Contrast
+    appearance: Appearance = "light"
+    accent: Accent | None = None      # None = the tone's accent colour
+    reduce_motion: bool = False
+    privacy: bool = False
+    overrides: list[str] = Field(default_factory=list)   # theme keys the customer set themselves
 
 
 class Section(BaseModel):
     component: Component
     size: Size
     props: dict = Field(default_factory=dict)
+    pinned: bool = False
 
 
 class Layout(BaseModel):
@@ -226,6 +264,26 @@ class Layout(BaseModel):
     theme: Theme
     sections: list[Section]
     explanations: dict[str, str] = Field(default_factory=dict)
+
+
+class TileSuggestion(BaseModel):
+    """"Your life changed, add this tile?" The system proposes; the customer decides."""
+    component: Component
+    title: str = Field(max_length=120)
+    reason: str = Field(max_length=240)
+    as_hero: bool = False
+
+
+class GalleryItem(BaseModel):
+    """Every registered tile, for the "Add tile" sheet. Ranked by planner score."""
+    component: Component
+    label: str
+    description: str
+    reason: str = ""
+    score: float = 0.0
+    suggested: bool = False
+    state: Literal["shown", "available", "hidden"] = "available"
+    is_hero: bool = False
 
 
 class Feed(BaseModel):
@@ -248,6 +306,10 @@ class HomeResponse(BaseModel):
     feed: Feed
     generated_at: dt.datetime
     llm_copy: bool = False
+    style: StylePrefs = Field(default_factory=StylePrefs)          # the customer's own settings (None = Auto)
+    suggestions: list[TileSuggestion] = Field(default_factory=list)
+    gallery: list[GalleryItem] = Field(default_factory=list)
+    declared: list[DeclaredSignalRow] = Field(default_factory=list)
 
 
 class Milestone(BaseModel):
@@ -285,6 +347,53 @@ class FeedbackRequest(BaseModel):
 class LayoutPrefRequest(BaseModel):
     component: Component
     state: LayoutPrefState
+    position: int | None = Field(default=None, ge=0, le=20)
+
+
+class SuggestionRequest(BaseModel):
+    component: Component
+    decision: Literal["accept", "dismiss"]
+
+
+class DeclareRequest(BaseModel):
+    signal: DeclaredSignal
+    state: Literal["set", "clear"] = "set"
+
+
+# ---- Kate (conversational assistant) ------------------------------------------------
+
+KateActionKind = Literal["pin_tile", "hide_tile", "add_tile", "snooze_card", "dismiss_card",
+                         "set_style", "declare", "open_card", "reset_style"]
+
+
+class KateAction(BaseModel):
+    """A proposal. Kate never changes anything herself: the app shows a button, the customer taps it, and the
+    app calls the regular validated endpoint."""
+    kind: KateActionKind
+    label: str = Field(max_length=60)
+    component: Component | None = None
+    card_key: str | None = Field(default=None, pattern=CARD_KEY_PATTERN)
+    card_type: CardType | None = None
+    style: StylePrefs | None = None
+    signal: DeclaredSignal | None = None
+
+
+class KateTurn(BaseModel):
+    role: Literal["user", "kate"]
+    text: str = Field(max_length=600)
+
+
+class KateRequest(BaseModel):
+    message: str = Field(default="", max_length=500)     # empty = "open the chat": Kate starts
+    card_key: str | None = Field(default=None, pattern=CARD_KEY_PATTERN)   # "Ask Kate" from a card
+    history: list[KateTurn] = Field(default_factory=list, max_length=12)
+
+
+class KateReply(BaseModel):
+    reply: str = Field(max_length=1200)
+    actions: list[KateAction] = Field(default_factory=list, max_length=3)
+    quick_replies: list[str] = Field(default_factory=list, max_length=4)
+    source: Literal["rules", "llm"] = "rules"
 
 
 class ConsentRequest(BaseModel):

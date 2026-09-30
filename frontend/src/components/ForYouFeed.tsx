@@ -11,6 +11,7 @@ export default function ForYouFeed({ ctx }: SectionProps) {
       asOf={ctx.asOf}
       onFeedback={ctx.onFeedback}
       onCta={ctx.onCta}
+      onAskKate={(key) => ctx.openKate(key)}
     />
   );
 }

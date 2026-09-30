@@ -1,9 +1,11 @@
-import { categoryLabel, eur } from "../format";
+import { categoryLabel } from "../format";
+import { useEur } from "../privacy";
 import { arr, num, str, type SectionProps } from "./types";
 
 interface Cat { category: string; eur: number }
 
 export default function FamilyBudgetHero({ props }: SectionProps) {
+  const eur = useEur();
   const month = str(props.month_label, "This month");
   const income = num(props.month_income_eur);
   const spent = num(props.month_spent_eur);

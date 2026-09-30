@@ -1,9 +1,11 @@
-import { categoryLabel, eur } from "../format";
+import { categoryLabel } from "../format";
+import { useEur } from "../privacy";
 import { arr, num, str, type SectionProps } from "./types";
 
 interface Cat { category: string; eur: number }
 
 export default function SpendingByCategory({ props }: SectionProps) {
+  const eur = useEur();
   const month = str(props.month_label, "This month");
   const total = num(props.total_eur);
   const cats = arr<Cat>(props.categories).slice(0, 6);

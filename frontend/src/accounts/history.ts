@@ -289,13 +289,19 @@ function withBalances(account: Account, asOf: string, list: Txn[]): { txns: Txn[
   // More money in than the balance can explain: people move the surplus away every month, so do the same
   // here instead of showing a history in which the account was overdrawn.
   if (spending && account.transactions === undefined) {
-    const net = txns.reduce((t, x) => t + x.amount_eur, 0);
-    const dates = monthlyOn(asOf, 28);
+    const base = txns;
+    const net = base.reduce((t, x) => t + x.amount_eur, 0);
+    const dates = [...monthlyOn(asOf, 14), ...monthlyOn(asOf, 28)];
     if (net > balance * 0.5 && dates.length > 0) {
-      const each = Math.ceil((net - balance * 0.25) / dates.length / 10) * 10;
       const who = account.kind === "business" ? "Transfer to personal account" : "Transfer to savings account";
-      txns = [...txns, ...dates.map((date) => ({ id: "", date, counterparty: who, category: "savings_transfer", amount_eur: -each }))];
-      txns.sort((a, b) => (a.date === b.date ? a.counterparty.localeCompare(b.counterparty) : a.date < b.date ? 1 : -1));
+      let each = Math.ceil((net - balance * 0.25) / dates.length / 10) * 10;
+      for (let i = 0; i < 6; i++) {
+        txns = [...base, ...dates.map((date) => ({ id: "", date, counterparty: who, category: "savings_transfer", amount_eur: -each }))];
+        txns.sort((a, b) => (a.date === b.date ? a.counterparty.localeCompare(b.counterparty) : a.date < b.date ? 1 : -1));
+        const low = Math.min(...curve(txns).map((p) => p.balance_eur));
+        if (low >= FLOOR_EUR) break;
+        each += Math.ceil((FLOOR_EUR - low) / dates.length / 10) * 10;
+      }
     }
   }
 

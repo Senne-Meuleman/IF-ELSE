@@ -6,31 +6,13 @@ from __future__ import annotations
 
 import datetime as dt
 
-from ..schemas import (Customer, CustomerPublic, HomeResponse, Layout, Milestone, Prefs, Section, Theme,
-                       TimelineResponse, Transaction)
+from ..schemas import (Customer, CustomerPublic, Features, HomeResponse, Milestone, Prefs, TimelineResponse,
+                       Transaction)
 from . import cards as cards_mod
 from . import persona as persona_mod
 from . import ranker
 from .features import compute_features
-
-try:  # layout.py is owned by another track; degrade gracefully until it lands
-    from .layout import plan_layout as _plan_layout
-except ImportError:  # pragma: no cover
-    _plan_layout = None
-
-
-def _fallback_layout(features, persona_mix) -> Layout:
-    return Layout(
-        version=1,
-        theme=Theme(density="comfortable", tone="neutral", contrast="normal"),
-        sections=[
-            Section(component="BalanceHero", size="hero", props={
-                "balance_eur": features.balance_eur, "monthly_income_eur": features.monthly_income_avg_90d,
-                "monthly_spend_eur": features.monthly_spend_avg_90d, "trend_30d_eur": 0.0, "sparkline": []}),
-            Section(component="ForYouFeed", size="full", props={}),
-        ],
-        explanations={"BalanceHero": "Default layout (layout planner not available)."},
-    )
+from .layout import plan_home_layout
 
 
 def customer_public(customer: Customer) -> CustomerPublic:
@@ -40,23 +22,30 @@ def customer_public(customer: Customer) -> CustomerPublic:
 
 def build_home(customer: Customer, txs: list[Transaction], balance_today: float, prefs: Prefs,
                as_of: dt.date, generated_at: dt.datetime | None = None) -> HomeResponse:
+    return build_home_with_features(customer, txs, balance_today, prefs, as_of, generated_at)[0]
+
+
+def build_home_with_features(customer: Customer, txs: list[Transaction], balance_today: float, prefs: Prefs,
+                             as_of: dt.date, generated_at: dt.datetime | None = None) -> tuple[HomeResponse, Features]:
+    """Kate needs the features behind the home screen to answer questions like "how am I doing"."""
     features = compute_features(customer, txs, balance_today, as_of)
-    persona_mix = persona_mod.infer_persona_mix(features)
+    persona_mix = persona_mod.infer_persona_mix(features, prefs.declared)
     candidates = cards_mod.generate_cards(features, customer, txs, as_of)
     feed = ranker.rank(candidates, persona_mix, prefs, customer, as_of)
-    if _plan_layout is not None:
-        layout = _plan_layout(features, persona_mix, prefs, customer, txs, as_of, feed.cards)
-    else:
-        layout = _fallback_layout(features, persona_mix)
+    plan = plan_home_layout(features, persona_mix, prefs, customer, txs, as_of, feed.cards)
     return HomeResponse(
         as_of=as_of,
         customer=customer_public(customer),
         persona_mix=persona_mix,
-        layout=layout,
+        layout=plan.layout,
         feed=feed,
         generated_at=generated_at or dt.datetime.now(dt.timezone.utc),
         llm_copy=False,
-    )
+        style=prefs.style,
+        suggestions=plan.suggestions,
+        gallery=plan.gallery,
+        declared=prefs.declared,
+    ), features
 
 
 _MILESTONE_LABELS = {

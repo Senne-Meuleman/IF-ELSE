@@ -1,6 +1,7 @@
 // Balance curve on the blue tile. Touch or hover to read the balance on any day.
 import { useState, type PointerEvent } from "react";
-import { eur, shortDate } from "../format";
+import { shortDate } from "../format";
+import { useEur } from "../privacy";
 import type { Point } from "./history";
 
 const W = 330;
@@ -8,6 +9,7 @@ const H = 64;
 const PAD = 4;
 
 export default function BalanceChart({ points }: { points: Point[] }) {
+  const eur = useEur();
   const [hover, setHover] = useState<number | null>(null);
   if (points.length < 2) return null;
 

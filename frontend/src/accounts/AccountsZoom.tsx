@@ -10,7 +10,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { motion, useReducedMotion } from "framer-motion";
 import type { HomeResponse, Section } from "../api";
 import { Icon } from "../components/icons";
-import { eur } from "../format";
+import { useEur, useMasked } from "../privacy";
 import type { Account, AccountKind, AccountsView } from "./accounts";
 import BalanceChart from "./BalanceChart";
 import { ChevronLeft } from "./glyphs";
@@ -41,6 +41,8 @@ interface Props {
   /** The hero component again, shown at the start of the zoom so the tile visibly grows. */
   tile: ReactNode;
   onClose: () => void;
+  /** Tapping the screen while amounts are hidden shows them for a few seconds (same as on the home screen). */
+  onReveal: () => void;
 }
 
 /** The big blue tile takes this share of the phone screen. */
@@ -56,7 +58,7 @@ const KIND_ICON: Record<AccountKind, string> = {
   joint: "split",
 };
 
-const masked = (last4: string) => `BE•• •••• •••• ${last4}`;
+const maskIban = (last4: string) => `BE•• •••• •••• ${last4}`;
 
 const corners = (tl: number, tr: number, br: number, bl: number) => ({
   borderTopLeftRadius: tl,
@@ -80,20 +82,23 @@ function measure(phone: HTMLElement, el: HTMLElement): Rect {
 }
 
 function RowBody({ account }: { account: Account }) {
+  const eur = useEur();
   return (
     <>
       <span className="zb-ico"><Icon name={KIND_ICON[account.kind]} /></span>
       <span className="zb-meta">
         <b>{account.name}</b>
-        <small>{masked(account.last4)}</small>
+        <small>{maskIban(account.last4)}</small>
       </span>
       <span className="zb-amt">{eur(account.balance_eur)}</span>
     </>
   );
 }
 
-export default function AccountsZoom({ origin, view, home, hero, tile, onClose }: Props) {
+export default function AccountsZoom({ origin, view, home, hero, tile, onClose, onReveal }: Props) {
   const reduce = useReducedMotion();
+  const eur = useEur();
+  const masked = useMasked();
   const tileH = Math.round(origin.stageH * TILE_SHARE);
 
   const byId = useMemo(() => new Map(view.accounts.map((a) => [a.id, a])), [view]);
@@ -161,7 +166,14 @@ export default function AccountsZoom({ origin, view, home, hero, tile, onClose }
   const isMain = cur.id === mainId;
 
   return (
-    <div className="zoom-layer" role="dialog" aria-label="Your accounts">
+    <div
+      className="zoom-layer"
+      role="dialog"
+      aria-label="Your accounts"
+      onClickCapture={(e) => {
+        if (masked && !(e.target as HTMLElement).closest("button, a, input")) onReveal();
+      }}
+    >
       <motion.div
         className="zb-scrim"
         onClick={onClose}
@@ -205,7 +217,7 @@ export default function AccountsZoom({ origin, view, home, hero, tile, onClose }
         transition={spring}
       >
         <motion.div
-          className="zb-tile hero"
+          className="zb-tile"
           style={{ width: origin.w, height: origin.h }}
           initial={{ opacity: 1 }}
           animate={{ opacity: 0 }}
@@ -232,7 +244,7 @@ export default function AccountsZoom({ origin, view, home, hero, tile, onClose }
 
           <h3>{cur.name}{isMain && <span className="zb-badge">Most used</span>}</h3>
           <div className="amount">{eur(cur.balance_eur)}</div>
-          <div className="line">{masked(cur.last4)}</div>
+          <div className="line">{maskIban(cur.last4)}</div>
 
           <div className="zb-scroll" key={cur.id}>
             <BalanceChart points={history.balances} />
