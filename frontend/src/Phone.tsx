@@ -1,4 +1,8 @@
-import { AnimatePresence, LayoutGroup, motion } from "framer-motion";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { AnimatePresence, LayoutGroup, motion, type HTMLMotionProps } from "framer-motion";
+import AccountsZoom, { type ZoomOrigin } from "./accounts/AccountsZoom";
+import { accountsFor } from "./accounts/accounts";
+import { ChevronRight } from "./accounts/glyphs";
 import type { Card, Component, Decision, HomeResponse, LayoutPrefState } from "./api";
 import { NAV_ICONS } from "./components/icons";
 import { resolve } from "./components/registry";
@@ -24,9 +28,61 @@ export default function Phone({ home, asOf, explain, loading, toast, onFeedback,
   const themeExplain = home.layout.explanations["theme"];
   const initials = home.customer.first_name.slice(0, 1).toUpperCase();
 
+  // The hero tile opens the accounts screen with a zoom.
+  const phoneRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
+  const restoreFocus = useRef(false);
+  const [zoom, setZoom] = useState<ZoomOrigin | null>(null);
+  const [tileHidden, setTileHidden] = useState(false);
+  const heroSection = home.layout.sections.find((s) => s.size === "hero");
+  const HeroC = heroSection ? resolve(heroSection.component) : null;
+  const accounts = useMemo(() => accountsFor(home, heroSection), [home, heroSection]);
+
+  // A different customer or hero means the tile we zoomed from is gone: close.
+  const heroKey = `${home.customer.first_name}|${heroSection?.component ?? ""}`;
+  useEffect(() => { setZoom(null); }, [heroKey]);
+
+  // After the zoom closes, hand the keyboard focus back to the tile (it can only take focus once visible again).
+  useEffect(() => {
+    if (!tileHidden && restoreFocus.current) {
+      restoreFocus.current = false;
+      triggerRef.current?.focus({ preventScroll: true });
+    }
+  }, [tileHidden]);
+
+  const openAccounts = (tile: HTMLElement) => {
+    const phone = phoneRef.current;
+    if (!phone || !accounts) return;
+    const p = phone.getBoundingClientRect();
+    const k = p.width / phone.offsetWidth || 1; // PhoneScaler shrinks the phone with a CSS transform
+    const r = tile.getBoundingClientRect();
+    triggerRef.current = tile;
+    setZoom({
+      x: (r.left - p.left) / k,
+      y: (r.top - p.top) / k,
+      w: r.width / k,
+      h: r.height / k,
+      radius: parseFloat(getComputedStyle(tile).borderTopLeftRadius) || 20,
+      variant: tile.querySelector<HTMLElement>(".hero")?.className ?? "hero",
+      stageW: phone.offsetWidth,
+      stageH: phone.offsetHeight,
+    });
+    setTileHidden(true);
+  };
+
+  const tileProps: HTMLMotionProps<"div"> = {
+    role: "button",
+    tabIndex: 0,
+    "aria-label": "Show all accounts",
+    onClick: (e) => openAccounts(e.currentTarget),
+    onKeyDown: (e) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openAccounts(e.currentTarget); }
+    },
+  };
+
   return (
     <div className="phone-bezel">
-      <div className="phone" style={themeVars(theme)}>
+      <div className="phone" ref={phoneRef} style={themeVars(theme)}>
         <div className="phone-top">
           <div className="greet">
             <div>
@@ -61,18 +117,21 @@ export default function Phone({ home, asOf, explain, loading, toast, onFeedback,
                   const C = resolve(s.component);
                   if (!C) return null;
                   const why = home.layout.explanations[s.component];
+                  const tappable = s.size === "hero" && accounts !== null;
                   return (
                     <motion.div
                       key={s.component}
                       layout
                       layoutId={s.component}
-                      className={`section ${s.size}`}
+                      className={`section ${s.size}${tappable ? " tappable" : ""}${tappable && tileHidden ? " tile-hidden" : ""}`}
                       initial={{ opacity: 0, scale: 0.96, y: 14 }}
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.94, transition: { duration: 0.2 } }}
                       transition={{ type: "spring", stiffness: 300, damping: 30, mass: 0.9 }}
+                      {...(tappable ? tileProps : {})}
                     >
                       <C props={s.props} ctx={ctx} />
+                      {tappable && <span className="hero-chevron" aria-hidden="true"><ChevronRight /></span>}
                       {explain && (
                         <div className="explain-badge">
                           <span>{why ?? `${s.component}: no explanation provided.`}</span>
@@ -91,6 +150,25 @@ export default function Phone({ home, asOf, explain, loading, toast, onFeedback,
             </div>
           </LayoutGroup>
         </div>
+
+        <AnimatePresence
+          onExitComplete={() => {
+            restoreFocus.current = true;
+            setTileHidden(false);
+          }}
+        >
+          {zoom && accounts && HeroC && heroSection && (
+            <AccountsZoom
+              key="accounts"
+              origin={zoom}
+              view={accounts}
+              home={home}
+              hero={heroSection}
+              tile={<HeroC props={heroSection.props} ctx={ctx} />}
+              onClose={() => setZoom(null)}
+            />
+          )}
+        </AnimatePresence>
 
         <AnimatePresence>
           {toast && (

@@ -28,3 +28,35 @@ Rules:
 - Exactly one hero, always first. `ForYouFeed` always second.
 - The frontend must ignore unknown component names (log a warning, render nothing).
 - The frontend never receives HTML; all strings are rendered as text.
+
+## Optional: `accounts` on the hero (tap the hero tile → accounts screen)
+
+Tapping the hero tile zooms open an accounts screen. The hero tile summarises the account the customer uses most, so
+`accounts[0]` is that account. The backend may add this **optional** field to the props of whichever `*Hero` it picks
+(nothing breaks when it is missing or malformed: the frontend then shows clearly labelled demo accounts derived from
+the persona mix, see `frontend/src/accounts/accounts.ts`).
+
+```jsonc
+"accounts": [                       // max 4 are shown; the first is the "Most used" one
+  { "id": "main",        "kind": "current",  "name": "Current account", "last4": "4821", "balance_eur": 3165.2 },
+  { "id": "tax_reserve", "kind": "reserve",  "name": "Tax reserve",     "last4": "9568", "balance_eur": 1840 }
+]
+```
+
+`kind` ∈ `current, savings, reserve, child, business, joint` (unknown values fall back to `current`).
+`last4` is the last four digits only; the frontend never receives a full IBAN.
+
+Picking an account in that screen turns it into the big blue tile with a balance curve, money in/out (30 days) and a
+scrollable history. An account may carry its own real bookings; without them the frontend derives demo bookings
+(`frontend/src/accounts/history.ts`) that end exactly on `balance_eur`.
+
+```jsonc
+{ "id": "main", "kind": "current", "name": "Current account", "last4": "4821", "balance_eur": 3165.2,
+  "transactions": [                 // any order; positive = money in, negative = money out; ~last 75 days is enough
+    { "date": "2026-09-26", "counterparty": "Employer NV", "category": "salary",    "amount_eur": 2480 },
+    { "date": "2026-09-28", "counterparty": "Colruyt",     "category": "groceries", "amount_eur": -64.2 }
+  ] }
+```
+
+`category` uses the transaction categories from `docs/DESIGN.md` §6.1 (unknown values still render, with a generic icon).
+The balance curve is computed backwards from `balance_eur` and the bookings.
