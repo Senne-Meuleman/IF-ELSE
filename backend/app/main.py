@@ -19,6 +19,7 @@ from fastapi.staticfiles import StaticFiles
 
 from . import auth, db
 from .auth import Principal
+from .customer_state.api import router as customer_state_router
 from .engine import kate, pipeline
 from .engine.persona import dominant
 from .schemas import (
@@ -54,6 +55,8 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="KBC Adaptive Home", lifespan=lifespan, docs_url=None, redoc_url=None, openapi_url=None)
+
+app.include_router(customer_state_router)
 
 
 @app.middleware("http")

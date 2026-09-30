@@ -82,6 +82,10 @@ Tests: `cd backend && py -3.12 -m pytest` (118 tests: synth, features, persona, 
 
 Offline evaluation against the injected ground truth: `cd backend && py -3.12 -m scripts.evaluate`
 
+Standalone backend Customer State: see [docs/CUSTOMER-STATE.md](docs/CUSTOMER-STATE.md) for its
+data model, calculations, synthetic scenarios, persistence and `/api/me/customer-state` endpoints.
+This foundation is independent of frontend content and recommendation selection.
+
 | Metric (1,000 synthetic customers, seed 42) | Value |
 |---|---|
 | persona recall / dominant-persona precision | 0.94 / 1.00 |
